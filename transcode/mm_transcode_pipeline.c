@@ -52,59 +52,31 @@ _mm_cleanup_encodebin(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	/* release videopad */
-	if(handle->decvideosinkpad) {
-		gst_object_unref(GST_OBJECT(handle->decvideosinkpad));
-		handle->decvideosinkpad = NULL;
-		debug_log("Success - gt_object_unref (decvideosinkpad)");
+	if (!handle->encodebin) {
+		debug_error("[ERROR] - handle encodebin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(handle->decvideosrcpad) {
-		gst_object_unref(GST_OBJECT(handle->decvideosrcpad));
-		handle->decvideosrcpad = NULL;
-		debug_log("Success - gst_object_unref (decvideosrcpad)");
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(handle->srcdecvideopad) {
-		gst_object_unref (GST_OBJECT(handle->srcdecvideopad));
-		handle->srcdecvideopad = NULL;
-		debug_log("Success - gst_object_unref (srcdecvideopad)");
-	}
-
-	if(handle->encvideopad) {
-		gst_object_unref (GST_OBJECT(handle->encvideopad));
-		handle->encvideopad = NULL;
+	if(handle->encodebin->encvideopad) {
+		gst_object_unref (GST_OBJECT(handle->encodebin->encvideopad));
+		handle->encodebin->encvideopad = NULL;
 		debug_log("Success - gst_object_unref (encvideopad)");
 	}
 
-	/* release audiopad */
-	if(handle->decaudiosinkpad) {
-		gst_object_unref (GST_OBJECT(handle->decaudiosinkpad));
-		handle->decaudiosinkpad=NULL;
-		debug_log("Success - gst_object_unref (decaudiosinkpad)");
-	}
-
-	if(handle->decaudiosrcpad) {
-		gst_object_unref (GST_OBJECT(handle->decaudiosrcpad));
-		handle->decaudiosrcpad=NULL;
-		debug_log("Success - gst_object_unref (decaudiosrcpad)");
-	}
-
-	if(handle->srcdecaudiopad) {
-		gst_object_unref (GST_OBJECT(handle->srcdecaudiopad));
-		handle->srcdecaudiopad = NULL;
-		debug_log("Success - gst_object_unref (srcdecaudiopad)");
-	}
-
-	if(handle->encaudiopad) {
-		gst_object_unref (GST_OBJECT(handle->encaudiopad));
-		handle->encaudiopad = NULL;
+	if(handle->encodebin->encaudiopad) {
+		gst_object_unref (GST_OBJECT(handle->encodebin->encaudiopad));
+		handle->encodebin->encaudiopad = NULL;
 		debug_log("Success - gst_object_unref (encaudiopad)");
 	}
 
-	if(handle->caps) {
-		gst_caps_unref (handle->caps);
-		handle->caps = NULL;
+	if(handle->property->caps) {
+		gst_caps_unref (handle->property->caps);
+		handle->property->caps = NULL;
 		debug_log("gst_caps_unref");
 	}
 
@@ -121,55 +93,103 @@ _mm_cleanup_pipeline(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	handle->_MMHandle = 0;
+	if (!handle->decoder_vidp) {
+		debug_error("[ERROR] - handle decoder video process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	handle->property->_MMHandle = 0;
 
 	/* g_thread_exit(handle->thread); */
 	debug_log("g_thread_exit");
-	if(handle->thread) {
-		g_thread_join(handle->thread);
+	if(handle->property->thread) {
+		g_thread_join(handle->property->thread);
 		debug_log("Success - join (thread)");
 	}
 
 	/* disconnecting bus watch */
-	if ( handle->bus_watcher ) {
-		g_source_remove(handle->bus_watcher);
+	if ( handle->property->bus_watcher ) {
+		g_source_remove(handle->property->bus_watcher);
 		debug_log("g_source_remove");
-		handle->bus_watcher = 0;
+		handle->property->bus_watcher = 0;
 	}
 
-	if(handle->queue) {
-		g_async_queue_unref(handle->queue);
-		handle->queue = NULL;
+	if(handle->property->queue) {
+		g_async_queue_unref(handle->property->queue);
+		handle->property->queue = NULL;
 		debug_log("Success - g_async_queue_unref(queue)");
 	}
 
-	if(handle->thread_mutex) {
-		g_mutex_free (handle->thread_mutex);
-		handle->thread_mutex = NULL;
+	if(handle->property->thread_mutex) {
+		g_mutex_free (handle->property->thread_mutex);
+		handle->property->thread_mutex = NULL;
 		debug_log("Success - free (thread_mutex)");
 	}
 
-	if(handle->thread_cond) {
-		g_cond_free (handle->thread_cond);
-		handle->thread_cond = NULL;
+	if(handle->property->thread_cond) {
+		g_cond_free (handle->property->thread_cond);
+		handle->property->thread_cond = NULL;
 		debug_log("Success - free (thread_cond)");
 	}
 
-	if(handle->thread_exit_mutex) {
-		g_mutex_free (handle->thread_exit_mutex);
-		handle->thread_exit_mutex = NULL;
+	if(handle->property->thread_exit_mutex) {
+		g_mutex_free (handle->property->thread_exit_mutex);
+		handle->property->thread_exit_mutex = NULL;
 		debug_log("Success - free (thread_exit_mutex)");
 	}
 
-	if(handle->sinkdecvideopad) {
-		gst_object_unref (GST_OBJECT(handle->sinkdecvideopad));
-		handle->sinkdecvideopad = NULL;
+	/* release videopad */
+	if(handle->decoder_vidp->decvideosinkpad) {
+		gst_object_unref(GST_OBJECT(handle->decoder_vidp->decvideosinkpad));
+		handle->decoder_vidp->decvideosinkpad = NULL;
+		debug_log("Success - gt_object_unref (decvideosinkpad)");
+	}
+
+	if(handle->decoder_vidp->decvideosrcpad) {
+		gst_object_unref(GST_OBJECT(handle->decoder_vidp->decvideosrcpad));
+		handle->decoder_vidp->decvideosrcpad = NULL;
+		debug_log("Success - gst_object_unref (decvideosrcpad)");
+	}
+
+	if(handle->decoder_vidp->srcdecvideopad) {
+		gst_object_unref (GST_OBJECT(handle->decoder_vidp->srcdecvideopad));
+		handle->decoder_vidp->srcdecvideopad = NULL;
+		debug_log("Success - gst_object_unref (srcdecvideopad)");
+	}
+
+	if(handle->decoder_vidp->sinkdecvideopad) {
+		gst_object_unref (GST_OBJECT(handle->decoder_vidp->sinkdecvideopad));
+		handle->decoder_vidp->sinkdecvideopad = NULL;
 		debug_log("Success - gst_object_unref (sinkdecvideopad)");
 	}
 
-	if(handle->sinkdecaudiopad) {
-		gst_object_unref (GST_OBJECT(handle->sinkdecaudiopad));
-		handle->sinkdecaudiopad = NULL;
+	/* release audiopad */
+	if(handle->decoder_audp->decaudiosinkpad) {
+		gst_object_unref (GST_OBJECT(handle->decoder_audp->decaudiosinkpad));
+		handle->decoder_audp->decaudiosinkpad = NULL;
+		debug_log("Success - gst_object_unref (decaudiosinkpad)");
+	}
+
+	if(handle->decoder_audp->decaudiosrcpad) {
+		gst_object_unref (GST_OBJECT(handle->decoder_audp->decaudiosrcpad));
+		handle->decoder_audp->decaudiosrcpad=NULL;
+		debug_log("Success - gst_object_unref (decaudiosrcpad)");
+	}
+
+	if(handle->decoder_audp->srcdecaudiopad) {
+		gst_object_unref (GST_OBJECT(handle->decoder_audp->srcdecaudiopad));
+		handle->decoder_audp->srcdecaudiopad = NULL;
+		debug_log("Success - gst_object_unref (srcdecaudiopad)");
+	}
+
+	if(handle->decoder_audp->sinkdecaudiopad) {
+		gst_object_unref (GST_OBJECT(handle->decoder_audp->sinkdecaudiopad));
+		handle->decoder_audp->sinkdecaudiopad = NULL;
 		debug_log("Success - gst_object_unref (sinkdecaudiopad)");
 	}
 
@@ -180,9 +200,9 @@ _mm_cleanup_pipeline(handle_s *handle)
 		debug_log("Success -clean encodebin");
 	}
 
-	if(handle->sink_elements) {
-		g_list_free (handle->sink_elements);
-		handle->sink_elements = NULL;
+	if(handle->property->sink_elements) {
+		g_list_free (handle->property->sink_elements);
+		handle->property->sink_elements = NULL;
 		debug_log("Success - g_list_free (sink_elements)");
 	}
 
@@ -192,27 +212,31 @@ _mm_cleanup_pipeline(handle_s *handle)
 		debug_log("Success - gst_object_unref (pipeline)");
 	}
 
-	if(handle->audio_cb_probe_id) {
-		g_source_remove (handle->audio_cb_probe_id);
-		handle->audio_cb_probe_id = 0;
+	if(handle->property->audio_cb_probe_id) {
+		g_source_remove (handle->property->audio_cb_probe_id);
+		handle->property->audio_cb_probe_id = 0;
 		debug_log("g_source_remove (audio_cb_probe_id)");
 	}
 
-	if(handle->video_cb_probe_id) {
-		g_source_remove (handle->video_cb_probe_id);
-		handle->video_cb_probe_id = 0;
+	if(handle->property->video_cb_probe_id) {
+		g_source_remove (handle->property->video_cb_probe_id);
+		handle->property->video_cb_probe_id = 0;
 		debug_log("g_source_remove (video_cb_probe_id)");
 	}
 
-	if(handle->progrss_event_id) {
-		g_source_remove (handle->progrss_event_id);
-		handle->progrss_event_id = 0;
+	if(handle->property->progrss_event_id) {
+		g_source_remove (handle->property->progrss_event_id);
+		handle->property->progrss_event_id = 0;
 		debug_log("g_source_remove (progrss_event_id)");
 	}
 
-	TRANSCODE_FREE (handle->mux);
-	TRANSCODE_FREE (handle->venc);
-	TRANSCODE_FREE (handle->aenc);
+	TRANSCODE_FREE (handle->property->mux);
+	TRANSCODE_FREE (handle->property->venc);
+	TRANSCODE_FREE (handle->property->aenc);
+	TRANSCODE_FREE (handle->decoder_vidp);
+	TRANSCODE_FREE (handle->decoder_audp);
+	TRANSCODE_FREE (handle->encodebin);
+	TRANSCODE_FREE (handle->property);
 	TRANSCODE_FREE (handle);
 
 	return ret;
@@ -228,61 +252,71 @@ _mm_decode_audio_output_create(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	handle->decaudiobin = gst_bin_new ("audiobin");
-	if (!handle->decaudiobin) {
+	if (!handle->decoder_audp) {
+		debug_error("[ERROR] - handle decoder audio process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	handle->decoder_audp->decaudiobin = gst_bin_new ("audiobin");
+	if (!handle->decoder_audp->decaudiobin) {
 		debug_error("decaudiobin could not be created");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	handle->decsinkaudioqueue = gst_element_factory_make("queue","decsinkaudioqueue");
-	if (!handle->decsinkaudioqueue) {
+	handle->decoder_audp->decsinkaudioqueue = gst_element_factory_make("queue","decsinkaudioqueue");
+	if (!handle->decoder_audp->decsinkaudioqueue) {
 		debug_error("decsinkaudioqueue could not be created");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	handle->decaudiosinkpad = gst_element_get_static_pad (handle->decsinkaudioqueue, "sink");
-	if (!handle->decaudiosinkpad) {
+	handle->decoder_audp->decaudiosinkpad = gst_element_get_static_pad (handle->decoder_audp->decsinkaudioqueue, "sink");
+	if (!handle->decoder_audp->decaudiosinkpad) {
 		debug_error("decaudiosinkpad could not be created");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(handle->audioencoder == MM_AUDIOENCODER_NO_USE) {
+	if(handle->property->audioencoder == MM_AUDIOENCODER_NO_USE) {
 		debug_log("[MM_AUDIOENCODER_NO_USE] fakesink create");
 
-		handle->audiofakesink = gst_element_factory_make ("fakesink", "audiofakesink");
-		if (!handle->audiofakesink) {
+		handle->decoder_audp->audiofakesink = gst_element_factory_make ("fakesink", "audiofakesink");
+		if (!handle->decoder_audp->audiofakesink) {
 			debug_error("fakesink element could not be created");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 	} else {
-		handle->aconv = gst_element_factory_make ("audioconvert", "aconv");
-		if (!handle->aconv) {
+		handle->decoder_audp->aconv = gst_element_factory_make ("audioconvert", "aconv");
+		if (!handle->decoder_audp->aconv) {
 			debug_error("decaudiobin element could not be created");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		handle->valve = gst_element_factory_make ("valve", "valve");
-		if (!handle->valve) {
+		handle->decoder_audp->valve = gst_element_factory_make ("valve", "valve");
+		if (!handle->decoder_audp->valve) {
 			debug_error("decaudiobin element could not be created");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		g_object_set(handle->valve,"drop", FALSE, NULL);
+		g_object_set(handle->decoder_audp->valve,"drop", FALSE, NULL);
 
-		handle->resample = gst_element_factory_make ("audioresample", "audioresample");
-		if (!handle->resample) {
+		handle->decoder_audp->resample = gst_element_factory_make ("audioresample", "audioresample");
+		if (!handle->decoder_audp->resample) {
 			debug_error("decaudiobin element could not be created");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		handle->audflt = gst_element_factory_make ("capsfilter", "afilter");
-		if (!handle->audflt) {
+		handle->decoder_audp->audflt = gst_element_factory_make ("capsfilter", "afilter");
+		if (!handle->decoder_audp->audflt) {
 			debug_error("audflt element could not be created");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		handle->decaudiosrcpad = gst_element_get_static_pad (handle->audflt, "src");
-		if (!handle->decaudiosrcpad) {
+		handle->decoder_audp->decaudiosrcpad = gst_element_get_static_pad (handle->decoder_audp->audflt, "src");
+		if (!handle->decoder_audp->decaudiosrcpad) {
 			debug_error("decaudiosrcpad element could not be created");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
@@ -301,35 +335,45 @@ _mm_decode_audio_output_link(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(handle->audioencoder == MM_AUDIOENCODER_NO_USE) {
-		debug_log("[MM_AUDIOENCODER_NO_USE] fakesink pad create");
-
-		gst_bin_add_many (GST_BIN (handle->decaudiobin), handle->decsinkaudioqueue, handle->audiofakesink, NULL);
-		if(!gst_element_link_many(handle->decsinkaudioqueue, handle->audiofakesink, NULL)) {
-			debug_error("[Audio Output Bin] gst_element_link_many failed");
-			return MM_ERROR_TRANSCODE_INTERNAL;
-		}
-
-		gst_element_add_pad (handle->decaudiobin, gst_ghost_pad_new("decbin_audiosink", handle->decaudiosinkpad));
-		handle->sinkdecaudiopad = gst_element_get_static_pad (handle->decaudiobin, "decbin_audiosink"); /* get sink audiopad of decodebin */
-	} else {
-		gst_bin_add_many (GST_BIN (handle->decaudiobin), handle->decsinkaudioqueue, handle->valve, handle->aconv, handle->resample, handle->audflt, NULL);
-		if(!gst_element_link_many(handle->decsinkaudioqueue, handle->valve, handle->aconv, handle->resample, handle->audflt, NULL)) {
-			debug_error("[Audio Output Bin] gst_element_link_many failed");
-			return MM_ERROR_TRANSCODE_INTERNAL;
-		}
-
-		gst_element_add_pad (handle->decaudiobin, gst_ghost_pad_new("decbin_audiosink", handle->decaudiosinkpad));
-		gst_element_add_pad (handle->decaudiobin, gst_ghost_pad_new("decbin_audiosrc", handle->decaudiosrcpad));
-
-		handle->sinkdecaudiopad = gst_element_get_static_pad (handle->decaudiobin, "decbin_audiosink"); /* get sink audiopad of decodebin */
-		handle->srcdecaudiopad = gst_element_get_static_pad (handle->decaudiobin, "decbin_audiosrc"); /* get src audiopad of decodebin */
-
-		handle->audio_cb_probe_id = gst_pad_add_buffer_probe (handle->sinkdecaudiopad, G_CALLBACK (_mm_cb_audio_output_stream_probe), handle);
-		debug_log("audio_cb_probe_id: %d", handle->audio_cb_probe_id); /* must use sinkpad (sinkpad => srcpad) for normal resized video buffer*/
+	if (!handle->decoder_audp) {
+		debug_error("[ERROR] - handle decoder audio process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	gst_bin_add (GST_BIN (handle->pipeline), handle->decaudiobin);
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if(handle->property->audioencoder == MM_AUDIOENCODER_NO_USE) {
+		debug_log("[MM_AUDIOENCODER_NO_USE] fakesink pad create");
+
+		gst_bin_add_many (GST_BIN (handle->decoder_audp->decaudiobin), handle->decoder_audp->decsinkaudioqueue, handle->decoder_audp->audiofakesink, NULL);
+		if(!gst_element_link_many(handle->decoder_audp->decsinkaudioqueue, handle->decoder_audp->audiofakesink, NULL)) {
+			debug_error("[Audio Output Bin] gst_element_link_many failed");
+			return MM_ERROR_TRANSCODE_INTERNAL;
+		}
+
+		gst_element_add_pad (handle->decoder_audp->decaudiobin, gst_ghost_pad_new("decbin_audiosink", handle->decoder_audp->decaudiosinkpad));
+		handle->decoder_audp->sinkdecaudiopad = gst_element_get_static_pad (handle->decoder_audp->decaudiobin, "decbin_audiosink"); /* get sink audiopad of decodebin */
+	} else {
+		gst_bin_add_many (GST_BIN (handle->decoder_audp->decaudiobin), handle->decoder_audp->decsinkaudioqueue, handle->decoder_audp->valve, handle->decoder_audp->aconv, handle->decoder_audp->resample, handle->decoder_audp->audflt, NULL);
+		if(!gst_element_link_many(handle->decoder_audp->decsinkaudioqueue, handle->decoder_audp->valve, handle->decoder_audp->aconv, handle->decoder_audp->resample, handle->decoder_audp->audflt, NULL)) {
+			debug_error("[Audio Output Bin] gst_element_link_many failed");
+			return MM_ERROR_TRANSCODE_INTERNAL;
+		}
+
+		gst_element_add_pad (handle->decoder_audp->decaudiobin, gst_ghost_pad_new("decbin_audiosink", handle->decoder_audp->decaudiosinkpad));
+		gst_element_add_pad (handle->decoder_audp->decaudiobin, gst_ghost_pad_new("decbin_audiosrc", handle->decoder_audp->decaudiosrcpad));
+
+		handle->decoder_audp->sinkdecaudiopad = gst_element_get_static_pad (handle->decoder_audp->decaudiobin, "decbin_audiosink"); /* get sink audiopad of decodebin */
+		handle->decoder_audp->srcdecaudiopad = gst_element_get_static_pad (handle->decoder_audp->decaudiobin, "decbin_audiosrc"); /* get src audiopad of decodebin */
+
+		handle->property->audio_cb_probe_id = gst_pad_add_buffer_probe (handle->decoder_audp->sinkdecaudiopad, G_CALLBACK (_mm_cb_audio_output_stream_probe), handle);
+		debug_log("audio_cb_probe_id: %d", handle->property->audio_cb_probe_id); /* must use sinkpad (sinkpad => srcpad) for normal resized video buffer*/
+	}
+
+	gst_bin_add (GST_BIN (handle->pipeline), handle->decoder_audp->decaudiobin);
 	return ret;
 }
 
@@ -343,50 +387,59 @@ _mm_decode_video_output_create(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	handle->decvideobin= gst_bin_new("videobin");
-	if (!handle->decvideobin) {
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->decoder_vidp) {
+		debug_error("[ERROR] - handle decoder video process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	handle->decoder_vidp->decvideobin= gst_bin_new("videobin");
+	if (!handle->decoder_vidp->decvideobin) {
 		debug_error("decvideobin could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	handle->decsinkvideoqueue = gst_element_factory_make("queue","decsinkvideoqueue");
-	if (!handle->decsinkvideoqueue) {
+	handle->decoder_vidp->decsinkvideoqueue = gst_element_factory_make("queue","decsinkvideoqueue");
+	if (!handle->decoder_vidp->decsinkvideoqueue) {
 		debug_error("decsinkvideoqueue element could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	handle->decvideosinkpad = gst_element_get_static_pad(handle->decsinkvideoqueue,"sink");
-	if (!handle->decvideosinkpad) {
+	handle->decoder_vidp->decvideosinkpad = gst_element_get_static_pad(handle->decoder_vidp->decsinkvideoqueue,"sink");
+	if (!handle->decoder_vidp->decvideosinkpad) {
 		debug_error("decvideosinkpad element could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	handle->videorate = gst_element_factory_make("videorate", "videorate");
-	if (!handle->videorate) {
+	handle->decoder_vidp->videorate = gst_element_factory_make("videorate", "videorate");
+	if (!handle->decoder_vidp->videorate) {
 		debug_error("videorate element could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	g_object_set (handle->videorate, "drop-only", TRUE,"average-period", GST_SECOND/2, NULL);
-	g_object_set (handle->videorate, "max-rate", 30, NULL);
-	g_object_set (handle->videorate, "skip-to-first", TRUE, NULL);
+	g_object_set (handle->decoder_vidp->videorate, "drop-only", TRUE,"average-period", GST_SECOND/2, NULL);
+	g_object_set (handle->decoder_vidp->videorate, "max-rate", 30, NULL);
 
-	handle->videoscale = gst_element_factory_make("videoscale", "scaler");
-	if (!handle->videoscale) {
+	handle->decoder_vidp->videoscale = gst_element_factory_make("videoscale", "scaler");
+	if (!handle->decoder_vidp->videoscale) {
 		debug_error("videoscale element could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 	/* Configure videoscale to use 4-tap scaling for higher quality */
-	g_object_set (handle->videoscale, "method", 2, NULL);
+	g_object_set (handle->decoder_vidp->videoscale, "method", 2, NULL);
 
-	handle->vidflt = gst_element_factory_make("capsfilter", "vfilter");
-	if (!handle->vidflt) {
+	handle->decoder_vidp->vidflt = gst_element_factory_make("capsfilter", "vfilter");
+	if (!handle->decoder_vidp->vidflt) {
 		debug_error("One element could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	handle->decvideosrcpad = gst_element_get_static_pad(handle->vidflt,"src");
-	if (!handle->decvideosrcpad) {
+	handle->decoder_vidp->decvideosrcpad = gst_element_get_static_pad(handle->decoder_vidp->vidflt,"src");
+	if (!handle->decoder_vidp->decvideosrcpad) {
 		debug_error("decvideosrcpad element could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
@@ -404,22 +457,27 @@ _mm_decode_video_output_link(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	gst_bin_add_many(GST_BIN(handle->decvideobin), handle->decsinkvideoqueue, handle->videoscale,  handle->videorate, handle->vidflt, NULL);
-	if(!gst_element_link_many(handle->decsinkvideoqueue, handle->videoscale, handle->videorate, handle->vidflt, NULL)) {
+	if (!handle->decoder_vidp) {
+		debug_error("[ERROR] - handle decoder video process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	gst_bin_add_many(GST_BIN(handle->decoder_vidp->decvideobin), handle->decoder_vidp->decsinkvideoqueue, handle->decoder_vidp->videoscale,  handle->decoder_vidp->videorate, handle->decoder_vidp->vidflt, NULL);
+	if(!gst_element_link_many(handle->decoder_vidp->decsinkvideoqueue, handle->decoder_vidp->videoscale, handle->decoder_vidp->videorate, handle->decoder_vidp->vidflt, NULL)) {
 		debug_error("[Video Output Bin] gst_element_link_many failed");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	gst_element_add_pad(handle->decvideobin, gst_ghost_pad_new("decbin_videosink", handle->decvideosinkpad));
-	gst_element_add_pad(handle->decvideobin, gst_ghost_pad_new("decbin_videosrc", handle->decvideosrcpad));
+	gst_element_add_pad(handle->decoder_vidp->decvideobin, gst_ghost_pad_new("decbin_videosink", handle->decoder_vidp->decvideosinkpad));
+	gst_element_add_pad(handle->decoder_vidp->decvideobin, gst_ghost_pad_new("decbin_videosrc", handle->decoder_vidp->decvideosrcpad));
 
-	handle->sinkdecvideopad = gst_element_get_static_pad(handle->decvideobin,"decbin_videosink");
-	handle->srcdecvideopad = gst_element_get_static_pad(handle->decvideobin,"decbin_videosrc");
+	handle->decoder_vidp->sinkdecvideopad = gst_element_get_static_pad(handle->decoder_vidp->decvideobin,"decbin_videosink");
+	handle->decoder_vidp->srcdecvideopad = gst_element_get_static_pad(handle->decoder_vidp->decvideobin,"decbin_videosrc");
 
-	handle->video_cb_probe_id = gst_pad_add_buffer_probe (handle->sinkdecvideopad, G_CALLBACK (_mm_cb_video_output_stream_probe), handle);
-	debug_log("video_cb_probe_sink_id: %d", handle->video_cb_probe_id); /* must use sinkpad (sinkpad => srcpad) */
+	handle->property->video_cb_probe_id = gst_pad_add_buffer_probe (handle->decoder_vidp->sinkdecvideopad, G_CALLBACK (_mm_cb_video_output_stream_probe), handle);
+	debug_log("video_cb_probe_sink_id: %d", handle->property->video_cb_probe_id); /* must use sinkpad (sinkpad => srcpad) */
 
-	gst_bin_add(GST_BIN(handle->pipeline), handle->decvideobin);
+	gst_bin_add(GST_BIN(handle->pipeline), handle->decoder_vidp->decvideobin);
 
 	return ret;
 }
@@ -429,15 +487,15 @@ _mm_decodebin_pipeline_create(handle_s *handle)
 {
 	int ret = MM_ERROR_NONE;
 
-	handle->decbin = gst_element_factory_make ("decodebin2", "decoder"); /* autoplug-select is not worked when decodebin */
+	handle->decodebin = gst_element_factory_make ("decodebin2", "decoder"); /* autoplug-select is not worked when decodebin */
 
-	if (!handle->decbin) {
+	if (!handle->decodebin) {
 		debug_error("decbin element could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	g_signal_connect (handle->decbin, "new-decoded-pad",G_CALLBACK(_mm_cb_decoder_newpad_encoder), handle);
-	g_signal_connect (handle->decbin, "autoplug-select", G_CALLBACK(_mm_cb_decode_bin_autoplug_select), handle);
+	g_signal_connect (handle->decodebin, "new-decoded-pad",G_CALLBACK(_mm_cb_decoder_newpad_encoder), handle);
+	g_signal_connect (handle->decodebin, "autoplug-select", G_CALLBACK(_mm_cb_decode_bin_autoplug_select), handle);
 
 	return ret;
 }
@@ -452,6 +510,21 @@ _mm_decodesrcbin_create(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (!handle->decoder_vidp) {
+		debug_error("[ERROR] - handle decoder video process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->decoder_audp) {
+		debug_error("[ERROR] - handle decoder audio process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
 	ret = _mm_filesrc_pipeline_create(handle);
 	if(ret == MM_ERROR_NONE) {
 		debug_log("Success - Create filesrc pipeline");
@@ -460,20 +533,20 @@ _mm_decodesrcbin_create(handle_s *handle)
 		return ret;
 	}
 
-	if(handle->has_audio_stream) {
+	if(handle->property->has_audio_stream) {
 		ret = _mm_decode_audio_output_create(handle);
 		if(ret == MM_ERROR_NONE) {
-			debug_log("Success - Create audiobin pipeline: 0x%2x",handle->decaudiobin);
+			debug_log("Success - Create audiobin pipeline: 0x%2x",handle->decoder_audp->decaudiobin);
 		} else{
 			debug_error("ERROR - Create audiobin pipeline");
 			return ret;
 		}
 	}
 
-	if(handle->has_video_stream) {
+	if(handle->property->has_video_stream) {
 		ret = _mm_decode_video_output_create(handle);
 		if(ret == MM_ERROR_NONE) {
-			debug_log("Success - Create videobin pipeline: 0x%2x",handle->decvideobin);
+			debug_log("Success - Create videobin pipeline: 0x%2x",handle->decoder_vidp->decvideobin);
 		} else{
 			debug_error("ERROR -Create videobin pipeline");
 			return ret;
@@ -501,6 +574,11 @@ _mm_decodesrcbin_link(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
 	ret=_mm_filesrc_decodebin_link(handle);
 	if(ret == MM_ERROR_NONE) {
 		debug_log("Success - _mm_filesrc_decodebin_link");
@@ -509,7 +587,7 @@ _mm_decodesrcbin_link(handle_s *handle)
 		return ret;
 	}
 
-	if(handle->has_audio_stream) {
+	if(handle->property->has_audio_stream) {
 		ret = _mm_decode_audio_output_link(handle);
 		if(ret == MM_ERROR_NONE) {
 			debug_log("Success - _mm_decode_audio_output_link");
@@ -519,7 +597,7 @@ _mm_decodesrcbin_link(handle_s *handle)
 		}
 	}
 
-	if(handle->has_video_stream) {
+	if(handle->property->has_video_stream) {
 		ret=_mm_decode_video_output_link(handle);
 		if(ret == MM_ERROR_NONE) {
 			debug_log("Success - _mm_decode_video_output_link");
@@ -542,14 +620,24 @@ _mm_encodebin_create(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	handle->encbin = gst_element_factory_make ("encodebin", "encodebin");
+	if (!handle->encodebin) {
+		debug_error("[ERROR] - handle encodebin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
 
-	if (!handle->encbin ) {
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	handle->encodebin->encbin = gst_element_factory_make ("encodebin", "encodebin");
+
+	if (!handle->encodebin->encbin ) {
 		debug_error("encbin element could not be created");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(handle->videoencoder != MM_VIDEOENCODER_NO_USE && handle->audioencoder != MM_AUDIOENCODER_NO_USE) {
+	if(handle->property->videoencoder != MM_VIDEOENCODER_NO_USE && handle->property->audioencoder != MM_AUDIOENCODER_NO_USE) {
 		ret = _mm_encodebin_set_video_property(handle);
 		if(ret != MM_ERROR_NONE) {
 			debug_error("ERROR -Setup encodebin video property");
@@ -561,14 +649,14 @@ _mm_encodebin_create(handle_s *handle)
 			debug_error("ERROR -Setup encodebin audio property");
 			return ret;
 		}
-	} else if(handle->videoencoder != MM_VIDEOENCODER_NO_USE) {
+	} else if(handle->property->videoencoder != MM_VIDEOENCODER_NO_USE) {
 		ret = _mm_encodebin_set_video_property(handle);
 		if(ret != MM_ERROR_NONE) {
 			debug_error("ERROR -Setup encodebin video property");
 			return ret;
 		}
-	} else if(handle->audioencoder != MM_AUDIOENCODER_NO_USE) {
-		handle->encodebin_profile = 1;
+	} else if(handle->property->audioencoder != MM_AUDIOENCODER_NO_USE) {
+		handle->encodebin->encodebin_profile = 1;
 		debug_log("[AUDIO ONLY ENCODE]");
 		ret = _mm_encodebin_set_audio_property(handle);
 		if(ret != MM_ERROR_NONE) {
@@ -577,7 +665,7 @@ _mm_encodebin_create(handle_s *handle)
 		}
 	}
 
-	debug_log("[Encodebin Profile: %d]", handle->encodebin_profile);
+	debug_log("[Encodebin Profile: %d]", handle->encodebin->encodebin_profile);
 	ret = _mm_encodebin_set_property(handle);
 	if(ret != MM_ERROR_NONE) {
 		debug_error("ERROR -Setup encodebin property");
@@ -597,14 +685,24 @@ _mm_encodebin_link(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	/* Add encodebin to pipeline */
-	gst_bin_add(GST_BIN(handle->pipeline), handle->encbin);
+	if (!handle->encodebin) {
+		debug_error("[ERROR] - handle encodebin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
 
-	if(handle->has_video_stream) {
-		if(handle->videoencoder != MM_VIDEOENCODER_NO_USE) {
-			handle->encvideopad = gst_element_get_request_pad(handle->encbin, "video");
-			if(handle->encvideopad) {
-				debug_log("encvideopad: 0x%2x", handle->encvideopad);
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	/* Add encodebin to pipeline */
+	gst_bin_add(GST_BIN(handle->pipeline), handle->encodebin->encbin);
+
+	if(handle->property->has_video_stream) {
+		if(handle->property->videoencoder != MM_VIDEOENCODER_NO_USE) {
+			handle->encodebin->encvideopad = gst_element_get_request_pad(handle->encodebin->encbin, "video");
+			if(handle->encodebin->encvideopad) {
+				debug_log("encvideopad: 0x%2x", handle->encodebin->encvideopad);
 			} else {
 				debug_error("error encvideopad");
 				return MM_ERROR_TRANSCODE_INTERNAL;
@@ -612,11 +710,11 @@ _mm_encodebin_link(handle_s *handle)
 		}
 	}
 
-	if(handle->has_audio_stream) {
-		if(handle->audioencoder != MM_AUDIOENCODER_NO_USE) {
-			handle->encaudiopad = gst_element_get_request_pad(handle->encbin, "audio");
-			if(handle->encaudiopad) {
-				debug_log("encaudiopad: 0x%2x", handle->encaudiopad);
+	if(handle->property->has_audio_stream) {
+		if(handle->property->audioencoder != MM_AUDIOENCODER_NO_USE) {
+			handle->encodebin->encaudiopad = gst_element_get_request_pad(handle->encodebin->encbin, "audio");
+			if(handle->encodebin->encaudiopad) {
+				debug_log("encaudiopad: 0x%2x", handle->encodebin->encaudiopad);
 			} else {
 				debug_error("error encaudiopad");
 				return MM_ERROR_TRANSCODE_INTERNAL;
@@ -637,34 +735,44 @@ _mm_encodebin_set_audio_property(handle_s* handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(handle->has_audio_stream) {
+	if (!handle->encodebin) {
+		debug_error("[ERROR] - handle encodebin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if(handle->property->has_audio_stream) {
 		/* Audio */
-		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encbin)), ARS)) {
-			g_object_set(G_OBJECT(handle->encbin), ARS, 0, NULL);
+		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encodebin->encbin)), ARS)) {
+			g_object_set(G_OBJECT(handle->encodebin->encbin), ARS, 0, NULL);
 			debug_log("[AUDIO RESAMPLE] encbin set auto-audio-resample");
 		} else {
 			debug_error("error [AUDIO RESAMPLE] encbin set auto-audio-resample");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encbin)), ACON)) {
-			g_object_set(G_OBJECT(handle->encbin), ACON, 1, NULL);
+		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encodebin->encbin)), ACON)) {
+			g_object_set(G_OBJECT(handle->encodebin->encbin), ACON, 1, NULL);
 			debug_log("encbin set auto-audio-convert");
 		} else {
 			debug_error("error encbin set auto-audio-convert");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encbin)), AENC)) {
-			g_object_set(G_OBJECT(handle->encbin), AENC, handle->aenc, NULL);
-			debug_log("[AUDIOENCODER] encbin set [%s: %s]",AENC, handle->aenc);
+		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encodebin->encbin)), AENC)) {
+			g_object_set(G_OBJECT(handle->encodebin->encbin), AENC, handle->property->aenc, NULL);
+			debug_log("[AUDIOENCODER] encbin set [%s: %s]",AENC, handle->property->aenc);
 		} else {
-			debug_error("error [AUDIOENCODER] encbin set [%s: %s]",AENC, handle->aenc);
+			debug_error("error [AUDIOENCODER] encbin set [%s: %s]",AENC, handle->property->aenc);
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		g_object_get(G_OBJECT(handle->encbin), "use-aenc-queue", &(handle->use_aencqueue), NULL);
-		debug_log("use_aencqueue : %d", handle->use_aencqueue);
+		g_object_get(G_OBJECT(handle->encodebin->encbin), "use-aenc-queue", &(handle->encodebin->use_aencqueue), NULL);
+		debug_log("use_aencqueue : %d", handle->encodebin->use_aencqueue);
 	}
 
 	return ret;
@@ -680,19 +788,29 @@ _mm_encodebin_set_property(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encbin)), PROFILE)) {
-		g_object_set(G_OBJECT(handle->encbin), PROFILE, handle->encodebin_profile, NULL);
+	if (!handle->encodebin) {
+		debug_error("[ERROR] - handle encodebin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encodebin->encbin)), PROFILE)) {
+		g_object_set(G_OBJECT(handle->encodebin->encbin), PROFILE, handle->encodebin->encodebin_profile, NULL);
 		debug_log("encbin set profile");
 	} else {
 		debug_error("error handle->encbin set profile");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encbin)), MUX)) {
-		g_object_set(G_OBJECT(handle->encbin), MUX, handle->mux, NULL);
-		debug_log("[MUX] encbin set [%s: %s]", MUX, handle->mux);
+	if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encodebin->encbin)), MUX)) {
+		g_object_set(G_OBJECT(handle->encodebin->encbin), MUX, handle->property->mux, NULL);
+		debug_log("[MUX] encbin set [%s: %s]", MUX, handle->property->mux);
 	} else {
-		debug_error("error [MUX] set [%s: %s]", MUX, handle->mux);
+		debug_error("error [MUX] set [%s: %s]", MUX, handle->property->mux);
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
@@ -709,26 +827,36 @@ _mm_encodebin_set_video_property(handle_s *handle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(handle->has_video_stream) {
+	if (!handle->encodebin) {
+		debug_error("[ERROR] - handle encodebin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if(handle->property->has_video_stream) {
 		/* Video */
-		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encbin)), ACS)) {
-			g_object_set(G_OBJECT(handle->encbin), ACS, 0, NULL);
+		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encodebin->encbin)), ACS)) {
+			g_object_set(G_OBJECT(handle->encodebin->encbin), ACS, 0, NULL);
 			debug_log("[AUTO COLORSPACE] encbin set auto-colorspace");
 		} else {
 			debug_error("error [AUTO COLORSPACE] encbin set auto-colorspace");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encbin)), VENC)) {
-			g_object_set(G_OBJECT(handle->encbin), VENC, handle->venc, NULL);
-			debug_log("[VIDEOENCODER] encbin set [%s: %s]", VENC, handle->venc);
+		if(g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(handle->encodebin->encbin)), VENC)) {
+			g_object_set(G_OBJECT(handle->encodebin->encbin), VENC, handle->property->venc, NULL);
+			debug_log("[VIDEOENCODER] encbin set [%s: %s]", VENC, handle->property->venc);
 		} else {
-			debug_error("error [VIDEOENCODER] set [%s: %s]", VENC, handle->venc);
+			debug_error("error [VIDEOENCODER] set [%s: %s]", VENC, handle->property->venc);
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		g_object_get(G_OBJECT(handle->encbin), "use-venc-queue", &(handle->use_vencqueue), NULL);
-		debug_log("vencqueue : %d", handle->use_vencqueue);
+		g_object_get(G_OBJECT(handle->encodebin->encbin), "use-venc-queue", &(handle->encodebin->use_vencqueue), NULL);
+		debug_log("vencqueue : %d", handle->encodebin->use_vencqueue);
 	}
 
 	return ret;
@@ -762,11 +890,21 @@ _mm_filesink_link(handle_s *handle)
 {
 	int ret = MM_ERROR_NONE;
 
+	if (!handle) {
+		debug_error("[ERROR] - handle");
+		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!handle->encodebin) {
+		debug_error("[ERROR] - handle encodebin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
 	/* Add encodesinkbin to pipeline */
 	gst_bin_add(GST_BIN(handle->pipeline), handle->filesink);
 
 	/* link encodebin and filesink */
-	if(!gst_element_link(handle->encbin, handle->filesink)) {
+	if(!gst_element_link(handle->encodebin->encbin, handle->filesink)) {
 		debug_error("gst_element_link [encbin ! filesink] failed");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	} else {
@@ -788,8 +926,13 @@ _mm_filesrc_pipeline_create(handle_s *handle)
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	debug_log("sourcefile: %s", handle->sourcefile);
-	g_object_set (G_OBJECT (handle->filesrc), "location", handle->sourcefile, NULL);
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	debug_log("sourcefile: %s", handle->property->sourcefile);
+	g_object_set (G_OBJECT (handle->filesrc), "location", handle->property->sourcefile, NULL);
 
 	return ret;
 }
@@ -805,9 +948,9 @@ _mm_filesrc_decodebin_link(handle_s *handle)
 	}
 
 	/* Add element(filesrc, decodebin)*/
-	gst_bin_add_many(GST_BIN(handle->pipeline), handle->filesrc, handle->decbin, NULL);
+	gst_bin_add_many(GST_BIN(handle->pipeline), handle->filesrc, handle->decodebin, NULL);
 
-	if(!gst_element_link_many(handle->filesrc, handle->decbin, NULL)) {
+	if(!gst_element_link_many(handle->filesrc, handle->decodebin, NULL)) {
 		debug_error("gst_element_link_many src ! decbin failed");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
@@ -825,9 +968,19 @@ _mm_transcode_preset_capsfilter(handle_s *handle, unsigned int resolution_width,
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (handle->vidflt) {
+	if (!handle->decoder_vidp) {
+		debug_error("[ERROR] - handle decoder video process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if (handle->decoder_vidp->vidflt) {
 		debug_log("[Resolution] Output Width: [%d], Output Height: [%d]", resolution_width, resolution_height);
-		g_object_set (G_OBJECT (handle->vidflt), "caps", gst_caps_new_simple("video/x-raw-yuv",
+		g_object_set (G_OBJECT (handle->decoder_vidp->vidflt), "caps", gst_caps_new_simple("video/x-raw-yuv",
 								"format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
 								"width", G_TYPE_INT, resolution_width,
 								"height", G_TYPE_INT, resolution_height,

@@ -36,9 +36,32 @@ mm_transcode_create (MMHandleType* MMHandle)
 	/* Init Transcode */
 	gst_init (NULL, NULL);
 	handle = g_new0 (handle_s, 1); /*handle = g_malloc(sizeof(handle_s));*/
-
 	if (!handle) {
 		debug_error("[ERROR] - handle");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	handle->decoder_vidp= g_new0 (handle_vidp_plugin_s, 1);
+	if (!handle->decoder_vidp) {
+		debug_error("[ERROR] - handle decoder video process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	handle->decoder_audp= g_new0 (handle_audp_plugin_s, 1);
+	if (!handle->decoder_audp) {
+		debug_error("[ERROR] - handle decoder audio process bin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	handle->encodebin= g_new0 (handle_encode_s, 1);
+	if (!handle->encodebin) {
+		debug_error("[ERROR] - handle encodebin");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	handle->property = g_new0 (handle_property_s, 1);
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
@@ -46,7 +69,7 @@ mm_transcode_create (MMHandleType* MMHandle)
 
 	if(MMHandle) {
 		debug_log("MMHandle: 0x%2x", handle);
-		handle->_MMHandle = 0;
+		handle->property->_MMHandle = 0;
 	} else {
 		debug_error("handle create Fail");
 		return MM_ERROR_TRANSCODE_INTERNAL;
@@ -68,6 +91,11 @@ mm_audioencoder_e audioencoder)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
 	if((in_Filename == NULL) || (strlen (in_Filename) == 0)) {
 		debug_error("Invalid Input file");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -83,78 +111,77 @@ mm_audioencoder_e audioencoder)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	debug_log("%s== %s", handle->sourcefile, in_Filename);
-	if(0 == strlen(handle->sourcefile) || 0 == strcmp(handle->sourcefile, in_Filename)) { /* protect the case of changing input file during transcoding */
+	debug_log("%s== %s", handle->property->sourcefile, in_Filename);
+	if(0 == strlen(handle->property->sourcefile) || 0 == strcmp(handle->property->sourcefile, in_Filename)) { /* protect the case of changing input file during transcoding */
 		/* set element*/
 		ret = _mm_transcode_set_handle_element(handle, in_Filename, containerformat, videoencoder, audioencoder);
 		if(ret != MM_ERROR_NONE) {
 			debug_error("ERROR -Set element");
 			return ret;
+		}
+
+		/* setup */
+		ret = _mm_setup_pipeline(handle);
+		if(ret == MM_ERROR_NONE) {
+			debug_log("Success - Setup Pipeline");
+		} else{
+			debug_error("ERROR - Setup Pipeline");
+			return ret;
+		}
+
+		/* video / auido stream */
+		ret = _mm_transcode_get_stream_info(handle);
+		if(ret == MM_ERROR_NONE) {
+			debug_log("Success - Get stream info");
+		} else{
+			debug_error("ERROR - Get stream info");
+			return ret;
+		}
+
+		/* create pipeline */
+		ret = _mm_transcode_create(handle);
+		if(ret == MM_ERROR_NONE) {
+			debug_log("Success - Create Pipeline");
+		} else{
+			debug_error("ERROR -Create Pipeline");
+			return ret;
+		}
+
+		/*link pipeline */
+		ret = _mm_transcode_link(handle);
+		if(ret == MM_ERROR_NONE) {
+			debug_log("Success - Link pipeline");
+		} else{
+			debug_error("ERROR - Link pipeline");
+			return ret;
+		}
+
+		/* flush param */
+		ret = _mm_transcode_param_flush(handle);
+		if(ret == MM_ERROR_NONE) {
+			debug_log("Success - Init parameter");
+		} else{
+			debug_error("ERROR - Init parameter");
+			return ret;
+		}
+
+		/* create thread */
+		ret = _mm_transcode_thread(handle);
+		if(ret == MM_ERROR_NONE) {
+			debug_log("Success - Link pipeline");
+		} else{
+			debug_error("ERROR - Link pipeline");
+			return ret;
+		}
+
+		/* Add_watcher Transcode Bus*/
+		GstBus *bus = gst_pipeline_get_bus (GST_PIPELINE (handle->pipeline));
+		handle->property->bus_watcher = gst_bus_add_watch (bus, (GstBusFunc)_mm_cb_transcode_bus, handle);
+		gst_object_unref (GST_OBJECT(bus));
+		debug_log("Success - gst_object_unref (bus)");
 	}
 
-	/* setup */
-	ret = _mm_setup_pipeline(handle);
-	if(ret == MM_ERROR_NONE) {
-		debug_log("Success - Setup Pipeline");
-	} else{
-		debug_error("ERROR - Setup Pipeline");
-		return ret;
-	}
-
-	/* video / auido stream */
-	ret = _mm_transcode_get_stream_info(handle);
-	if(ret == MM_ERROR_NONE) {
-		debug_log("Success - Get stream info");
-	} else{
-		debug_error("ERROR - Get stream info");
-		return ret;
-	}
-
-	/* create pipeline */
-	ret = _mm_transcode_create(handle);
-	if(ret == MM_ERROR_NONE) {
-		debug_log("Success - Create Pipeline");
-	} else{
-		debug_error("ERROR -Create Pipeline");
-		return ret;
-	}
-
-	/*link pipeline */
-	ret = _mm_transcode_link(handle);
-	if(ret == MM_ERROR_NONE) {
-		debug_log("Success - Link pipeline");
-	} else{
-		debug_error("ERROR - Link pipeline");
-		return ret;
-	}
-
-	/* flush param */
-	ret = _mm_transcode_param_flush(handle);
-	if(ret == MM_ERROR_NONE) {
-		debug_log("Success - Init parameter");
-	} else{
-		debug_error("ERROR - Init parameter");
-		return ret;
-	}
-
-	/* create thread */
-	ret = _mm_transcode_thread(handle);
-	if(ret == MM_ERROR_NONE) {
-		debug_log("Success - Link pipeline");
-	} else{
-		debug_error("ERROR - Link pipeline");
-		return ret;
-	}
-
-	/* Add_watcher Transcode Bus*/
-	GstBus *bus;
-	bus = gst_pipeline_get_bus (GST_PIPELINE (handle->pipeline));
-	handle->bus_watcher = gst_bus_add_watch (bus, (GstBusFunc)_mm_cb_transcode_bus, handle);
-	gst_object_unref (GST_OBJECT(bus));
-	debug_log("Success - gst_object_unref (bus)");
-	}
-
-	handle->_MMHandle++;
+	handle->property->_MMHandle++;
 
 	return ret;
 }
@@ -169,6 +196,11 @@ mm_transcode (MMHandleType MMHandle, unsigned int resolution_width, unsigned int
 	if (!handle) {
 		debug_error("[ERROR] - handle");
 		return MM_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
 	if(!completed_callback) {
@@ -186,15 +218,20 @@ mm_transcode (MMHandleType MMHandle, unsigned int resolution_width, unsigned int
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	handle->progress_cb = progress_callback;
-	handle->progress_cb_param = user_param;
-	debug_log("[MMHandle] 0x%2x [progress_cb] 0x%2x [progress_cb_param] 0x%2x", MMHandle, handle->progress_cb, handle->progress_cb_param);
+	handle->property->progress_cb= progress_callback;
+	handle->property->progress_cb_param = user_param;
+	debug_log("[MMHandle] 0x%2x [progress_cb] 0x%2x [progress_cb_param] 0x%2x", MMHandle, handle->property->progress_cb, handle->property->progress_cb_param);
 
-	handle->completed_cb = completed_callback;
-	handle->completed_cb_param = user_param;
-	debug_log("[MMHandle] 0x%2x [completed_cb] 0x%2x [completed_cb_param] 0x%2x", MMHandle, handle->completed_cb, handle->completed_cb_param);
+	handle->property->completed_cb = completed_callback;
+	handle->property->completed_cb_param = user_param;
+	debug_log("[MMHandle] 0x%2x [completed_cb] 0x%2x [completed_cb_param] 0x%2x", MMHandle, handle->property->completed_cb, handle->property->completed_cb_param);
 
-	if(handle->_MMHandle == 1) { /* check if prepare is called during transcoding */
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if(handle->property->_MMHandle == 1) { /* check if prepare is called during transcoding */
 		handle_param_s *param = g_new0 (handle_param_s, 1);
 		if(param) {
 			/*g_value_init (param, G_TYPE_INT);*/
@@ -216,10 +253,10 @@ mm_transcode (MMHandleType MMHandle, unsigned int resolution_width, unsigned int
 			return ret;
 		}
 
-		handle->is_busy = TRUE;
+		handle->property->is_busy = TRUE;
 
 		/*push data to handle */
-		g_async_queue_push (handle->queue, GINT_TO_POINTER(param));
+		g_async_queue_push (handle->property->queue, GINT_TO_POINTER(param));
 	}
 
 	return ret;
@@ -237,12 +274,17 @@ mm_transcode_is_busy (MMHandleType MMHandle, bool *is_busy)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
 	if (!is_busy) {
 		debug_error("[ERROR] - is_busy");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	*is_busy = handle->is_busy;
+	*is_busy = handle->property->is_busy;
 	debug_log("[Transcoding....] %d", *is_busy);
 
 	return ret;
@@ -259,7 +301,12 @@ mm_transcode_cancel (MMHandleType MMHandle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(handle->is_busy) {
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if(handle->property->is_busy) {
 		debug_log("Cancel - [IS BUSY]");
 		ret = _mm_transcode_state_change(handle, GST_STATE_NULL);
 		if(ret != MM_ERROR_NONE) {
@@ -272,14 +319,15 @@ mm_transcode_cancel (MMHandleType MMHandle)
 			debug_log("[Cancel] unlink %s", handle->param->outputfile);
 		} else {
 			debug_error("unlink error");
+			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		g_cond_signal(handle->thread_cond);
+		g_cond_signal(handle->property->thread_cond);
 		debug_log("===> send completed signal <-cancel");
-		g_mutex_unlock (handle->thread_mutex);
+		g_mutex_unlock (handle->property->thread_mutex);
 	}
 
-	handle->is_busy = FALSE;
+	handle->property->is_busy = FALSE;
 
 	return ret;
 }
@@ -296,15 +344,29 @@ mm_transcode_destroy (MMHandleType MMHandle)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	g_mutex_lock(handle->thread_exit_mutex);
-	handle->repeat_thread_exit = TRUE;
-	handle->is_busy = FALSE;
-	g_mutex_unlock(handle->thread_exit_mutex);
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	g_mutex_lock(handle->property->thread_exit_mutex);
+	handle->property->repeat_thread_exit = TRUE;
+	if(handle->property->is_busy) {
+		ret = mm_transcode_cancel(MMHandle);
+		if(ret == MM_ERROR_NONE) {
+			debug_log("Success - Cancel Transcode");
+		} else{
+			debug_error("ERROR - Cancel Transcode");
+			return FALSE;
+		}
+	}
+	/* handle->property->is_busy = FALSE; */
+	g_mutex_unlock(handle->property->thread_exit_mutex);
 
 	handle_param_s *param = g_new0 (handle_param_s, 1);
 	if(param) {
 		debug_log("[Try to Push Last Queue]");
-		g_async_queue_push (handle->queue, GINT_TO_POINTER(param));
+		g_async_queue_push (handle->property->queue, GINT_TO_POINTER(param));
 	} else {
 		debug_error("Fail to create Last Queue");
 		return MM_ERROR_INVALID_ARGUMENT;
@@ -319,9 +381,9 @@ mm_transcode_destroy (MMHandleType MMHandle)
 	}
 
 	if((handle->param) && (!handle->param->completed)) {
-		g_cond_signal(handle->thread_cond);
+		g_cond_signal(handle->property->thread_cond);
 		debug_log("===> send completed signal <-destroy");
-		g_mutex_unlock (handle->thread_mutex);
+		g_mutex_unlock (handle->property->thread_mutex);
 		debug_log("unlock destory");
 		if(strlen(handle->param->outputfile) > 0) {
 			unlink(handle->param->outputfile);
@@ -355,20 +417,31 @@ mm_transcode_get_attrs(MMHandleType MMHandle, mm_containerformat_e *containerfor
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
 	if(!containerformat || !videoencoder ||!audioencoder || !current_pos || !duration || !resolution_width || !resolution_height) {
 		debug_error("[ERROR] - Invalid argument pointer");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	*containerformat = handle->containerformat;
-	*videoencoder = handle->videoencoder;
-	*audioencoder = handle->audioencoder;
-	if(handle->current_pos > handle->param->duration) {
+	*containerformat = handle->property->containerformat;
+	*videoencoder = handle->property->videoencoder;
+	*audioencoder = handle->property->audioencoder;
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
+
+	if(handle->property->current_pos > handle->param->duration) {
 		*current_pos = handle->param->duration;
 	} else {
-		*current_pos = handle->current_pos;
+		*current_pos = handle->property->current_pos;
 	}
-	*duration = handle->real_duration;
+	*duration = handle->property->real_duration;
 	*resolution_width = handle->param->resolution_width;
 	*resolution_height = handle->param->resolution_height;
 

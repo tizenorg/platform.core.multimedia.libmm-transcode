@@ -1,8 +1,8 @@
 #sbs-git:slp/pkgs/l/libmm-transcode libmm-transcode 0.1 62b62e6d483557fc5750d1b4986e9a98323f1194
 Name:       libmm-transcode
 Summary:    Multimedia Framework Video Transcode Library
-Version:    0.7
-Release:    12
+Version:    0.8
+Release:    2
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz

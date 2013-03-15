@@ -107,61 +107,55 @@ typedef struct _handle_param_s
 	unsigned int printed;
 } handle_param_s;
 
-typedef struct _handle_s
+typedef struct _handle_vidp_plugin_s
 {
-	/* pipeline element*/
-	GstElement *pipeline;
-	GstElement *decsrcbin;
-	GstElement *filesrc;
-	GstPad *filesrcpad;
-	GstElement *decbin;
-	GstElement *decaudiobin;
-	GstPad *decaudiopad;
-	GstPad *decvideopad;
-	GstElement *valve;
-	GstElement *aconv;
-	GstElement *resample;
-	GstElement *audflt;
-	GstElement *audiofakesink;
-	GstCaps *caps;
-	GstElement *decsinkaudioqueue;
-	GstPad *decaudiosinkpad;
-	GstPad *decaudiosrcpad;
-	GstPad *audiofakesinkcpad;
-	GstPad *audiopad;
-	GstPad *sinkdecaudiopad;
-	GstPad *srcdecaudiopad;
-	GstPad *encaudiopad;
-
-	GstElement *decsinkvideoqueue;
+	/* decoder video processing pipeline */
 	GstElement *decvideobin;
+	GstElement *decsinkvideoqueue;
 	GstPad *decvideosinkpad;
 	GstPad *decvideosrcpad;
-	GstPad *decxvimagesinkpad;
 	GstElement *vidflt;
 	GstElement *videoscale;
 	GstElement *videorate;
 	GstPad *videopad;
 	GstPad *sinkdecvideopad;
 	GstPad *srcdecvideopad;
-	GstPad *encvideopad;
+} handle_vidp_plugin_s;
 
+typedef struct _handle_audp_plugin_s
+{
+	/* decoder audio processing pipeline */
+	GstElement *decaudiobin;
+	GstElement *decsinkaudioqueue;
+	GstPad *decaudiosinkpad;
+	GstPad *decaudiosrcpad;
+	GstElement *valve;
+	GstElement *aconv;
+	GstElement *resample;
+	GstElement *audflt;
+	GstElement *audiofakesink;
+	GstPad *sinkdecaudiopad;
+	GstPad *srcdecaudiopad;
+	GstPad *decaudiopad;
+	GstPad *decvideopad;
+} handle_audp_plugin_s;
+
+typedef struct _handle_encode_s
+{
+	/* encode pipeline */
 	GstElement *encbin;
+	GstPad *encaudiopad;
+	GstPad *encvideopad;
 	GstElement *ffmux;
 	int use_vencqueue;
 	int use_aencqueue;
 	GstElement *encodepad;
-	GstElement *filesink;
-	GList *sink_elements;
+	GstElement *encodevideo;
 	int encodebin_profile;
-	gboolean linked_vidoutbin;
-	gboolean linked_audoutbin;
-	mm_containerformat_e containerformat;
-	mm_videoencoder_e videoencoder;
-	mm_audioencoder_e audioencoder;
-	gboolean has_video_stream;
-	gboolean has_audio_stream;
+} handle_encode_s;
 
+typedef struct _handle_property_s
+{
 	/* pipeline property */
 	guint bus_watcher;
 	int AUDFLAG;
@@ -192,6 +186,18 @@ typedef struct _handle_s
 	unsigned long total_length;
 	char sourcefile[BUFFER_SIZE];
 	unsigned int _MMHandle;
+
+	mm_containerformat_e containerformat;
+	mm_videoencoder_e videoencoder;
+	mm_audioencoder_e audioencoder;
+
+	GstCaps *caps;
+	GList *sink_elements;
+	gboolean linked_vidoutbin;
+	gboolean linked_audoutbin;
+	gboolean has_video_stream;
+	gboolean has_audio_stream;
+
 	/* message callback */
 	mm_transcode_completed_callback completed_cb;
 	void * completed_cb_param;
@@ -208,11 +214,25 @@ typedef struct _handle_s
 	GThread* thread;
 	gboolean repeat_thread_exit;
 	GAsyncQueue *queue;
+	int seek_idx;
+} handle_property_s;
+
+typedef struct _handle_s
+{
+	/* Transcode Pipeline Element*/
+	GstElement *pipeline;
+	GstElement *filesrc;
+	GstElement *decodebin;
+	handle_vidp_plugin_s *decoder_vidp;
+	handle_audp_plugin_s *decoder_audp;
+	handle_encode_s *encodebin;
+	GstElement *filesink;
 
 	/* seek paramerter */
 	handle_param_s *param;
 
-	int seek_idx;
+	/* pipeline property */
+	handle_property_s *property;
 } handle_s;
 
 gboolean _mm_cb_audio_output_stream_probe(GstPad *pad, GstBuffer *buffer, gpointer user_data);
