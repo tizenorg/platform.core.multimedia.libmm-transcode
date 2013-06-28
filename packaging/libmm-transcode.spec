@@ -5,6 +5,7 @@ Release:    2
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1001: 	libmm-transcode.manifest
 BuildRequires:  pkgconfig(mm-common)
 BuildRequires:  pkgconfig(mm-log)
 BuildRequires:  pkgconfig(mm-ta)
@@ -38,6 +39,7 @@ Multimedia Framework Video Transcode Utility Package
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 %build
 ./autogen.sh
@@ -65,17 +67,20 @@ rm -rf %{buildroot}
 
 
 %files
+%manifest %{name}.manifest
 /usr/share/license/%{name}
 %manifest libmm-transcode.manifest
 %defattr(-,root,root,-)
 %{_libdir}/*.so*
 
 %files devel
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_includedir}/mmf/*.h
 %{_libdir}/pkgconfig/*
 
 %files tool
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_bindir}/mm_transcode_testsuite
 
