@@ -1,0 +1,8 @@
+Change-Id: I841a52fe956ff8b353c69b7272a87ec58b6b20dc
+Code-Review+2: Ryan Ware <ware@linux.intel.com>
+Verified+1: Ryan Ware <ware@linux.intel.com>
+Submitted-by: Ryan Ware <ware@linux.intel.com>
+Submitted-at: Mon, 08 Jul 2013 10:06:17 -0700
+Reviewed-on: https://review.tizen.org/gerrit/4595
+Project: platform/core/multimedia/libmm-transcode
+Branch: refs/heads/tizen
