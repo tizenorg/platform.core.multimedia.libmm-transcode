@@ -29,6 +29,7 @@ libmm_transcode_la_LIBADD = $(MMCOMMON_LIBS) \
 			    $(GLIB_LIBS) \
 			    $(GST_LIBS) \
 			    $(GSTAPP_LIBS) \
+                $(GST_VIDEO_LIBS) \
                             $(GST_PLUGIN_BASE_LIBS) \
 			    $(GST_INTERFACE_LIBS) \
                             $(GSTPBUTILS_LIBS) \

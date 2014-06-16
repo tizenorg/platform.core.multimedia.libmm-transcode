@@ -369,7 +369,7 @@ _mm_decode_audio_output_link(handle_s *handle)
 		handle->decoder_audp->sinkdecaudiopad = gst_element_get_static_pad (handle->decoder_audp->decaudiobin, "decbin_audiosink"); /* get sink audiopad of decodebin */
 		handle->decoder_audp->srcdecaudiopad = gst_element_get_static_pad (handle->decoder_audp->decaudiobin, "decbin_audiosrc"); /* get src audiopad of decodebin */
 
-		handle->property->audio_cb_probe_id = gst_pad_add_buffer_probe (handle->decoder_audp->sinkdecaudiopad, G_CALLBACK (_mm_cb_audio_output_stream_probe), handle);
+        handle->property->audio_cb_probe_id = gst_pad_add_probe (handle->decoder_audp->sinkdecaudiopad, GST_PAD_PROBE_TYPE_BUFFER, _mm_cb_audio_output_stream_probe, handle, g_free);
 		debug_log("audio_cb_probe_id: %d", handle->property->audio_cb_probe_id); /* must use sinkpad (sinkpad => srcpad) for normal resized video buffer*/
 	}
 
@@ -474,7 +474,7 @@ _mm_decode_video_output_link(handle_s *handle)
 	handle->decoder_vidp->sinkdecvideopad = gst_element_get_static_pad(handle->decoder_vidp->decvideobin,"decbin_videosink");
 	handle->decoder_vidp->srcdecvideopad = gst_element_get_static_pad(handle->decoder_vidp->decvideobin,"decbin_videosrc");
 
-	handle->property->video_cb_probe_id = gst_pad_add_buffer_probe (handle->decoder_vidp->sinkdecvideopad, G_CALLBACK (_mm_cb_video_output_stream_probe), handle);
+    handle->property->video_cb_probe_id = gst_pad_add_probe (handle->decoder_vidp->sinkdecvideopad, GST_PAD_PROBE_TYPE_BUFFER, _mm_cb_video_output_stream_probe, handle, g_free);
 	debug_log("video_cb_probe_sink_id: %d", handle->property->video_cb_probe_id); /* must use sinkpad (sinkpad => srcpad) */
 
 	gst_bin_add(GST_BIN(handle->pipeline), handle->decoder_vidp->decvideobin);
@@ -487,14 +487,14 @@ _mm_decodebin_pipeline_create(handle_s *handle)
 {
 	int ret = MM_ERROR_NONE;
 
-	handle->decodebin = gst_element_factory_make ("decodebin2", "decoder"); /* autoplug-select is not worked when decodebin */
+	handle->decodebin = gst_element_factory_make ("decodebin", "decoder"); /* autoplug-select is not worked when decodebin */
 
 	if (!handle->decodebin) {
 		debug_error("decbin element could not be created. Exiting");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	g_signal_connect (handle->decodebin, "new-decoded-pad",G_CALLBACK(_mm_cb_decoder_newpad_encoder), handle);
+	g_signal_connect (handle->decodebin, "pad-added",G_CALLBACK(_mm_cb_decoder_newpad_encoder), handle);
 	g_signal_connect (handle->decodebin, "autoplug-select", G_CALLBACK(_mm_cb_decode_bin_autoplug_select), handle);
 
 	return ret;
@@ -980,8 +980,8 @@ _mm_transcode_preset_capsfilter(handle_s *handle, unsigned int resolution_width,
 
 	if (handle->decoder_vidp->vidflt) {
 		debug_log("[Resolution] Output Width: [%d], Output Height: [%d]", resolution_width, resolution_height);
-		g_object_set (G_OBJECT (handle->decoder_vidp->vidflt), "caps", gst_caps_new_simple("video/x-raw-yuv",
-								"format", GST_TYPE_FOURCC, GST_MAKE_FOURCC ('I', '4', '2', '0'),
+		g_object_set (G_OBJECT (handle->decoder_vidp->vidflt), "caps", gst_caps_new_simple("video/x-raw",
+                                "format", G_TYPE_STRING, "I420",
 								"width", G_TYPE_INT, resolution_width,
 								"height", G_TYPE_INT, resolution_height,
 								NULL), NULL);

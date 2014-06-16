@@ -101,7 +101,7 @@ mm_transcode_create(MMHandleType* MMHandle);
  * @param	MMHandle						[in]			MMHandleType
  * @param	in_Filename						[in]			Input Video File pointer
  * @param	containerformat					[in]			Container format (3GP/MP4)
- * @param	videoencoder						[in]			Videoencoder (ffenc_h263p/ffenc_mpeg4/savsenc_mp4/savsenc_h264)
+ * @param	videoencoder						[in]			Videoencoder (avenc_h263p/avenc_mpeg4/savsenc_mp4/savsenc_h264)
  * @param	audioencoder						[in]			Audioencoder (amr/aac)
 
  * @return  	This function returns transcode processor result value

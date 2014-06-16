@@ -41,16 +41,15 @@ extern "C" {
 #include <gst/gstpipeline.h>
 #include <gst/gstbuffer.h>
 #include <gst/app/gstappsrc.h>
-#include <gst/app/gstappbuffer.h>
+#include <gst/video/video.h>
 #include <gst/app/gstappsink.h>
-#include <glib-2.0/glib/gprintf.h>
-#include <gstreamer-0.10/gst/gstelement.h>
+#include <glib/gprintf.h>
+#include <gst/gstelement.h>
 #include <gst/check/gstcheck.h>
 #include <gst/pbutils/pbutils.h>
 #include <gst/pbutils/encoding-profile.h>
 #include <gst/pbutils/pbutils-enumtypes.h>
-#include <gst/check/gstcheck.h>
-#include <glibconfig.h>
+#include <gst/video/video-format.h>
 #include <pthread.h>
 #include <mm_file.h>
 #include <gmodule.h>
@@ -68,14 +67,14 @@ extern "C" {
 #define AMRENC "amrnbenc"
 #define ARS "auto-audio-resample"
 #define ASF "asfdemux"
-#define FFENCMPEG4 "ffenc_mpeg4"
-#define FFENCH263 "ffenc_h263p"
+#define AVENCMPEG4 "avenc_mpeg4"
+#define AVENCH263 "avenc_h263p"
 #define MUX "mux-name"
-#define MUXAAC "ffmux_adts"
-#define MUX3GP "ffmux_3gp"
+#define MUXAAC "avmux_adts"
+#define MUX3GP "avmux_3gp"
 #define MUXGPP "gppmux"
-#define MUXMP4 "ffmux_mp4"
-#define AACENC "ffenc_aac"
+#define MUXMP4 "avmux_mp4"
+#define AACENC "avenc_aac"
 #define PROFILE "profile"
 #define VENC "venc-name"
 #define MIN_DURATION 1000
@@ -170,7 +169,7 @@ typedef struct _handle_property_s
 	gulong audio_cb_probe_id;
 	guint progrss_event_id;
 	const gchar *mime;
-	guint32 fourcc;
+	gchar format[sizeof(GST_VIDEO_FORMATS_ALL)];
 	gint in_width;
 	gint in_height;
 	gint width;
@@ -235,10 +234,10 @@ typedef struct _handle_s
 	handle_property_s *property;
 } handle_s;
 
-gboolean _mm_cb_audio_output_stream_probe(GstPad *pad, GstBuffer *buffer, gpointer user_data);
+GstPadProbeReturn _mm_cb_audio_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
 GstAutoplugSelectResult _mm_cb_decode_bin_autoplug_select(GstElement * element, GstPad * pad, GstCaps * caps, GstElementFactory * factory, handle_s *handle);
-void _mm_cb_decoder_newpad_encoder(GstElement *decodebin, GstPad *pad, gboolean last, handle_s *handle);
-gboolean _mm_cb_video_output_stream_probe(GstPad *pad, GstBuffer *buffer, gpointer user_data);
+void _mm_cb_decoder_newpad_encoder(GstElement *decodebin, GstPad *pad, handle_s *handle);
+GstPadProbeReturn _mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
 gboolean _mm_cb_print_position(handle_s *handle);
 gboolean _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata);
 const gchar* _mm_check_media_type(GstCaps *caps);

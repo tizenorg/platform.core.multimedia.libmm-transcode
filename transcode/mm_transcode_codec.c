@@ -75,11 +75,11 @@ _mm_encodebin_set_venc_aenc(handle_s *handle)
 
 	switch(handle->property->videoencoder) {
 		case MM_VIDEOENCODER_MPEG4 :
-			strncpy(handle->property->venc, FFENCMPEG4, ENC_BUFFER_SIZE-1);
+			strncpy(handle->property->venc, AVENCMPEG4, ENC_BUFFER_SIZE-1);
 			debug_log("[FFMPEG] %s", handle->property->venc);
 			break;
 		case MM_VIDEOENCODER_H263 :
-			strncpy(handle->property->venc, FFENCH263, ENC_BUFFER_SIZE-1);
+			strncpy(handle->property->venc, AVENCH263, ENC_BUFFER_SIZE-1);
 			debug_log("[FFMPEG] %s", handle->property->venc);
 			break;
 		case MM_VIDEOENCODER_NO_USE :
