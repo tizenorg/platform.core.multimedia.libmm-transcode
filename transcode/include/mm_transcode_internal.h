@@ -31,7 +31,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "mm_log.h"
+#include <mm_log.h>
 #include <mm_debug.h>
 #include <mm_error.h>
 #include <mm_debug.h>
@@ -53,7 +53,6 @@ extern "C" {
 #include <pthread.h>
 #include <mm_file.h>
 #include <gmodule.h>
-#include <mm_ta.h>
 #define BUFFER_SIZE 4096
 #define ENC_BUFFER_SIZE 25
 
@@ -75,6 +74,8 @@ extern "C" {
 #define MUXGPP "gppmux"
 #define MUXMP4 "avmux_mp4"
 #define AACENC "avenc_aac"
+#define AACCOMPLIANCE "compliance"
+#define AACCOMPLIANCELEVEL -2
 #define PROFILE "profile"
 #define VENC "venc-name"
 #define MIN_DURATION 1000
@@ -98,7 +99,7 @@ typedef struct _handle_param_s
 	unsigned long start_pos;
 	unsigned long duration;
 	mm_seek_mode_e seek_mode;
-	char outputfile[BUFFER_SIZE];
+	gchar* outputfile;
 	gboolean seeking;
 	gboolean async_done;
 	gboolean segment_done;
@@ -183,7 +184,7 @@ typedef struct _handle_property_s
 	unsigned long current_pos;
 	unsigned long real_duration;
 	unsigned long total_length;
-	char sourcefile[BUFFER_SIZE];
+	char *sourcefile;
 	unsigned int _MMHandle;
 
 	mm_containerformat_e containerformat;
