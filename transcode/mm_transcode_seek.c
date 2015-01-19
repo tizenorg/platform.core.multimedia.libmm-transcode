@@ -48,17 +48,17 @@ _mm_cb_audio_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 	gint64 start_pos_ts = handle->param->start_pos * G_GINT64_CONSTANT(1000000);
 
-    if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
+	if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
 		if(0 == handle->property->AUDFLAG++) {
-            _mm_transcode_audio_capsfilter(gst_pad_query_caps (pad, NULL), handle); /* Need to audio caps converting when amrnbenc*/ /* Not drop buffer with 'return FALSE'*/
+			_mm_transcode_audio_capsfilter(gst_pad_get_current_caps (pad), handle); /* Need to audio caps converting when amrnbenc*/ /* Not drop buffer with 'return FALSE'*/
 
 			if(handle->param->seeking) {
-				debug_log("[AUDIO BUFFER TIMESTAMP] ([%"GST_TIME_FORMAT"])", GST_TIME_ARGS(start_pos_ts));
-                GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
+                		debug_log("[AUDIO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
+		                GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
 			}
 		}
 	}
-    return GST_PAD_PROBE_OK;
+	return GST_PAD_PROBE_OK;
 }
 
 GstAutoplugSelectResult
@@ -133,7 +133,7 @@ _mm_cb_decoder_newpad_encoder(GstElement *decodebin, GstPad *pad, handle_s *hand
 	}
 
 	debug_log("[============ new-decoded-pad ============]");
-    handle->property->caps = gst_pad_query_caps (pad, NULL);
+	handle->property->caps = gst_pad_query_caps (pad, NULL);
 	const gchar *mime = _mm_check_media_type(handle->property->caps);
 
 	if(!mime) {
@@ -244,17 +244,17 @@ _mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 	gint64 start_pos_ts = handle->param->start_pos * G_GINT64_CONSTANT(1000000);
 
-    if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
+	if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
 		if(0 == handle->property->VIDFLAG++) {
-            _mm_transcode_video_capsfilter(gst_pad_query_caps (pad, NULL), handle); /* Not drop buffer with 'return FALSE'*/
+            _mm_transcode_video_capsfilter(gst_pad_get_current_caps (pad), handle); /* Not drop buffer with 'return FALSE'*/
 
 			if(handle->param->seeking) {
-				debug_log("[VIDEO BUFFER TIMESTAMP] ([%"GST_TIME_FORMAT"])", GST_TIME_ARGS(start_pos_ts));
+                debug_log("[VIDEO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
                 GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
 			}
 		}
 	}
-    return GST_PAD_PROBE_OK;
+	return GST_PAD_PROBE_OK;
 }
 
 gboolean
@@ -357,7 +357,7 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 		}
 
         if(gst_element_query_duration (handle->pipeline, fmt, &total_length) && handle->property->total_length == 0) {
-			debug_log("[GST_MESSAGE_ASYNC_DONE] Total Duration: %" GST_TIME_FORMAT " ", GST_TIME_ARGS (total_length));
+			debug_log("[GST_MESSAGE_ASYNC_DONE] Total Duration: %" G_GUINT64_FORMAT " ", total_length);
 			handle->property->total_length = (unsigned long)(GST_TIME_AS_MSECONDS(total_length));
 		}
 
@@ -555,6 +555,11 @@ _mm_transcode_exec(handle_s *handle, handle_param_s *param)
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
+	if(!param || !param->outputfile) {
+		debug_error("[ERROR] - param");
+		return MM_ERROR_TRANSCODE_INVALID_VALUE;
+	}
+
 	g_mutex_lock (handle->property->thread_mutex);
 
 	if(handle->property->repeat_thread_exit) {
@@ -576,9 +581,14 @@ _mm_transcode_exec(handle_s *handle, handle_param_s *param)
 		handle->param->start_pos = param->start_pos;
 		handle->param->duration = param->duration;
 		handle->param->seek_mode = param->seek_mode;
+		handle->param->outputfile = malloc(sizeof(gchar) * BUFFER_SIZE);
+		if(!handle->param->outputfile) {
+			TRANSCODE_FREE(handle->param);
+			return MM_ERROR_TRANSCODE_NO_FREE_SPACE;
+		}
 
 		memset(handle->param->outputfile, 0, BUFFER_SIZE);
-		strncpy(handle->param->outputfile, param->outputfile, strlen(param->outputfile));
+		strncpy(handle->param->outputfile, param->outputfile, strlen(param->outputfile) - 1);
 
 		handle->param->seeking = param->seeking;
 		handle->param->async_done = FALSE;
@@ -595,6 +605,7 @@ _mm_transcode_exec(handle_s *handle, handle_param_s *param)
 		} else {
 			g_object_set (G_OBJECT (handle->filesink), "location", handle->param->outputfile, NULL);
 			debug_log("[%s] set filesink location", handle->param->outputfile);
+
 
 			/* Ready Transcode */
 			if(strlen(handle->param->outputfile) !=0) {
@@ -816,7 +827,6 @@ _mm_transcode_video_capsfilter_set_parameter(GstCaps *caps, handle_s *handle)
 		return;
 	}
 
-	debug_log("caps: %s", gst_caps_to_string(caps));
 	GstStructure *_str = gst_caps_get_structure (caps, 0);
 	handle->property->mime = _mm_check_media_type(caps);
 	debug_log("mime: %s", handle->property->mime);
@@ -897,9 +907,14 @@ _mm_transcode_set_handle_element(handle_s *handle, const char * in_Filename, mm_
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	memset(handle->property->sourcefile, 0, BUFFER_SIZE);
-	strncpy(handle->property->sourcefile, in_Filename, strlen (in_Filename));
-	debug_log("%s(%d)", handle->property->sourcefile, strlen (in_Filename));
+	handle->property->sourcefile = malloc(sizeof(char) * BUFFER_SIZE);
+	if(handle->property->sourcefile) {
+		memset(handle->property->sourcefile, 0, BUFFER_SIZE);
+		strncpy(handle->property->sourcefile, in_Filename, strlen (in_Filename) - 1);
+	} else {
+		debug_error("[ERROR] malloc fail of sourcefile");
+		return MM_ERROR_TRANSCODE_INTERNAL;
+	}
 
 	handle->property->containerformat = containerformat;
 	handle->property->videoencoder = videoencoder;
@@ -937,8 +952,13 @@ _mm_transcode_set_handle_parameter(handle_param_s *param, unsigned int resolutio
 	}
 
 	if(out_Filename) {
+		param->outputfile = malloc(sizeof(gchar) * BUFFER_SIZE);
+		if(!param->outputfile) {
+			debug_error("[ERROR] outputfile");
+			return MM_ERROR_TRANSCODE_NO_FREE_SPACE;
+		}
 		memset(param->outputfile, 0, BUFFER_SIZE);
-		strncpy(param->outputfile, out_Filename, strlen (out_Filename));
+		strncpy(param->outputfile, out_Filename, strlen (out_Filename) - 1);
 		debug_log("%s(%d)", param->outputfile, strlen (out_Filename));
 		debug_log("output file name: %s", param->outputfile);
 	} else {
@@ -1235,12 +1255,7 @@ _mm_transcode_thread_repeate(gpointer data)
 			debug_log("[pop queue] resolution_width: %d, resolution_height: %d, start_pos: %d, duration: %d, seek_mode: %d outputfile: %s\n",
 			pop_data->resolution_width, pop_data->resolution_height, pop_data->start_pos, pop_data->duration, pop_data->seek_mode, pop_data->outputfile);
 
-			MMTA_INIT();
-			__ta__("_mm_transcode_exec",
 			ret = _mm_transcode_exec(handle, pop_data); /* Need to block */
-			);
-			MMTA_ACUM_ITEM_SHOW_RESULT();
-			MMTA_RELEASE ();
 			if(ret == MM_ERROR_NONE) {
 				debug_log("Success - transcode_exec");
 			} else{

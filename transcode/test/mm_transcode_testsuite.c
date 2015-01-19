@@ -25,7 +25,6 @@
 #include "mm_transcode_internal.h"
 #include "mm_log.h"
 #include "mm_debug.h"
-#include <mm_ta.h>
 #include <unistd.h>
 #include <signal.h>
 #define _one_by_one 1
@@ -67,7 +66,7 @@ trap(int sig)
 	if(mm_transcode_cancel (MMHandle) == MM_ERROR_NONE) {
 		debug_log("[Success Cancel]");
 	}
-	mm_transcode (MMHandle, 176, 144, 0, 0, 5000, 1,"/opt/usr/media/Videos/aftercancel.3gp", transcode_progress_cb, transcode_completed_cb, NULL);
+	mm_transcode (MMHandle, 176, 144, 0, 0, 5000, 1, "/opt/usr/media/Videos/aftercancel.3gp", transcode_progress_cb, transcode_completed_cb, NULL);
 	#endif
 }
 
@@ -95,7 +94,7 @@ int main(int argc, char *argv[])
 	if(ret == MM_ERROR_NONE) {
 		debug_log("Success - Create Transcode Handle");
 		debug_log("MMHandle: 0x%2x", MMHandle);
-	}else{
+	} else{
 		debug_log("ERROR - Create Transcode Handle");
 		return ret;
 	}
@@ -110,7 +109,7 @@ int main(int argc, char *argv[])
 	ret = mm_transcode_prepare (MMHandle, argv[1], containerformat, videoencoder, audioencoder);
 	if(ret == MM_ERROR_NONE) {
 		debug_log("Success - Transcode pipeline");
-	}else{
+	} else{
 		debug_error("ERROR - Transcode pipeline");
 		return ret;
 	}
@@ -153,7 +152,7 @@ int main(int argc, char *argv[])
 			debug_error("ERROR - Transcode attribute");
 			return ret;
 		}
-	}else{
+	} else{
 		debug_error("ERROR - Transcode pipeline");
 		return ret;
 	}

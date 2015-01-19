@@ -22,7 +22,7 @@
 #include "mm_transcode_internal.h"
 
 int
-mm_transcode_create (MMHandleType* MMHandle)
+mm_transcode_create(MMHandleType* MMHandle)
 {
 	int ret = MM_ERROR_NONE;
 	handle_s *handle = NULL;
