@@ -14,7 +14,6 @@ libmm_transcode_la_SOURCES = mm_transcode.c \
 libmm_transcode_la_CFLAGS = -I$(srcdir)/include \
 			     $(MMCOMMON_CFLAGS) \
 			     $(MMFILEINFO_CFLAGS) \
-                             $(MMTA_CFLAGS) -DGST_EXT_TIME_ANALYSIS \
 			     $(GLIB_CFLAGS) \
 			     $(GST_CFLAGS) \
 			     $(GSTAPP_CFLAGS)  \
@@ -25,7 +24,6 @@ libmm_transcode_la_CFLAGS = -I$(srcdir)/include \
 
 libmm_transcode_la_LIBADD = $(MMCOMMON_LIBS) \
 			    $(MMFILEINFO_LIBS) \
-                            $(MMTA_LIBS) \
 			    $(GLIB_LIBS) \
 			    $(GST_LIBS) \
 			    $(GSTAPP_LIBS) \

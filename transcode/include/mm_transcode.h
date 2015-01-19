@@ -84,8 +84,8 @@ typedef enum
  *
  * @param	MMHandle		[in]			MMHandleType pointer
 
- * @return  	This function returns transcode processor result value
- *		if  the result is 0, then handle creation succeed
+ * @return 	This function returns transcode processor result value
+ *		if the result is 0, then handle creation succeed
  *		else if the result is -1, then handle creation failed
  */
 int
@@ -104,8 +104,8 @@ mm_transcode_create(MMHandleType* MMHandle);
  * @param	videoencoder						[in]			Videoencoder (avenc_h263p/avenc_mpeg4/savsenc_mp4/savsenc_h264)
  * @param	audioencoder						[in]			Audioencoder (amr/aac)
 
- * @return  	This function returns transcode processor result value
- *		if  the result is 0, then you can use output_Filename pointer(char** value)
+ * @return 	This function returns transcode processor result value
+ *		if the result is 0, then you can use output_Filename pointer(char** value)
  *		else if the result is -1, then do not execute when the colopsapce converter is not supported
  */
 int
@@ -132,8 +132,8 @@ mm_transcode_prepare(MMHandleType MMHandle, const char *in_Filename, mm_containe
  * @param	user_param						[in]			User parameter which is received from user when callback function was set
 
 
- * @return  	This function returns transcode processor result value
- *		if  the result is 0, then you can use output_Filename pointer(char** value)
+ * @return 	This function returns transcode processor result value
+ *		if the result is 0, then you can use output_Filename pointer(char** value)
  *		else if the result is -1, then do not execute when the colopsapce converter is not supported
  */
 int
@@ -150,8 +150,8 @@ mm_transcode(MMHandleType MMHandle, unsigned int resolution_width, unsigned int 
  * @param	MMHandle						[in]			MMHandleType
  * @param	is_busy							[in/out]		If transcode is executing or not
 
- * @return  	This function returns transcode processor result value
- *		if  the result is 0, then it means that trascode is executing now
+ * @return 	This function returns transcode processor result value
+ *		if the result is 0, then it means that trascode is executing now
  *		else if the result is -1, then you can call mm_transcode_prepare for new input file
  */
 int
@@ -166,8 +166,8 @@ mm_transcode_is_busy(MMHandleType MMHandle, bool *is_busy);
  *
  * @param	MMHandle		[in]			MMHandleType
 
- * @return  	This function returns transcode processor result value
- *		if  the result is 0, then handle destory succeed
+ * @return 	This function returns transcode processor result value
+ *		if the result is 0, then handle destory succeed
  *		else if the result is -1, then handle destory failed
  */
 int
@@ -182,8 +182,8 @@ mm_transcode_cancel(MMHandleType MMHandle);
  *
  * @param	MMHandle		[in]			MMHandleType
 
- * @return  	This function returns transcode processor result value
- *		if  the result is 0, then handle destory succeed
+ * @return 	This function returns transcode processor result value
+ *		if the result is 0, then handle destory succeed
  *		else if the result is -1, then handle destory failed
  */
 int
@@ -197,16 +197,16 @@ mm_transcode_destroy(MMHandleType MMHandle);
  * @remark      Transcode Handle Destory
  *
  * @param	MMHandle		[in]				MMHandleType
- * @param»	containerformat	[in/out]			Container format
- * @param»	videoencoder»	[in/out]			Videoencoder
- * @param»	audioencoder»	[in/out]			Audioencoder
- * @param»	current_pos		[in/out]»			Current Position
- * @param»	duration			[in/out]			Duration
- * @param»	resolution_width»	[in/out]			Real Resolution Width
- * @param»	resolution_height	[in/out]			Real Resolution Height
+ * @paramÂ»	containerformat	[in/out]			Container format
+ * @paramÂ»	videoencoderÂ»	[in/out]			Videoencoder
+ * @paramÂ»	audioencoderÂ»	[in/out]			Audioencoder
+ * @paramÂ»	current_pos		[in/out]Â»			Current Position
+ * @paramÂ»	duration			[in/out]			Duration
+ * @paramÂ»	resolution_widthÂ»	[in/out]			Real Resolution Width
+ * @paramÂ»	resolution_height	[in/out]			Real Resolution Height
 
  * @return      This function returns transcode processor result value
- *              if  the result is 0, then transcode get attribute succeed
+ *              if the result is 0, then transcode get attribute succeed
  *              else if the result is -1, then transcode get attribute failed
  */
 int
