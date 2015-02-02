@@ -48,17 +48,17 @@ _mm_cb_audio_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 	gint64 start_pos_ts = handle->param->start_pos * G_GINT64_CONSTANT(1000000);
 
-	if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
+    if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
 		if(0 == handle->property->AUDFLAG++) {
-			_mm_transcode_audio_capsfilter(gst_pad_get_current_caps (pad), handle); /* Need to audio caps converting when amrnbenc*/ /* Not drop buffer with 'return FALSE'*/
+            _mm_transcode_audio_capsfilter(gst_pad_get_current_caps (pad), handle); /* Need to audio caps converting when amrnbenc*/ /* Not drop buffer with 'return FALSE'*/
 
 			if(handle->param->seeking) {
-                		debug_log("[AUDIO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
-		                GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
+                debug_log("[AUDIO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
+                GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
 			}
 		}
 	}
-	return GST_PAD_PROBE_OK;
+    return GST_PAD_PROBE_OK;
 }
 
 GstAutoplugSelectResult
@@ -133,7 +133,7 @@ _mm_cb_decoder_newpad_encoder(GstElement *decodebin, GstPad *pad, handle_s *hand
 	}
 
 	debug_log("[============ new-decoded-pad ============]");
-	handle->property->caps = gst_pad_query_caps (pad, NULL);
+    handle->property->caps = gst_pad_query_caps (pad, NULL);
 	const gchar *mime = _mm_check_media_type(handle->property->caps);
 
 	if(!mime) {
@@ -244,7 +244,7 @@ _mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 	gint64 start_pos_ts = handle->param->start_pos * G_GINT64_CONSTANT(1000000);
 
-	if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
+    if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
 		if(0 == handle->property->VIDFLAG++) {
             _mm_transcode_video_capsfilter(gst_pad_get_current_caps (pad), handle); /* Not drop buffer with 'return FALSE'*/
 
@@ -254,7 +254,7 @@ _mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 			}
 		}
 	}
-	return GST_PAD_PROBE_OK;
+    return GST_PAD_PROBE_OK;
 }
 
 gboolean
@@ -357,7 +357,7 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 		}
 
         if(gst_element_query_duration (handle->pipeline, fmt, &total_length) && handle->property->total_length == 0) {
-			debug_log("[GST_MESSAGE_ASYNC_DONE] Total Duration: %" G_GUINT64_FORMAT " ", total_length);
+            debug_log("[GST_MESSAGE_ASYNC_DONE] Total Duration: %" G_GUINT64_FORMAT " ", total_length);
 			handle->property->total_length = (unsigned long)(GST_TIME_AS_MSECONDS(total_length));
 		}
 
