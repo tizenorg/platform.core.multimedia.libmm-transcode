@@ -53,12 +53,12 @@ _mm_cb_audio_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 			_mm_transcode_audio_capsfilter(gst_pad_get_current_caps (pad), handle); /* Need to audio caps converting when amrnbenc*/ /* Not drop buffer with 'return FALSE'*/
 
 			if(handle->param->seeking) {
-                		debug_log("[AUDIO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
-		                GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
+				debug_log("[AUDIO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
+				GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
 			}
 		}
 	}
-	return GST_PAD_PROBE_OK;
+    return GST_PAD_PROBE_OK;
 }
 
 GstAutoplugSelectResult
@@ -246,11 +246,11 @@ _mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 	if(GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
 		if(0 == handle->property->VIDFLAG++) {
-            _mm_transcode_video_capsfilter(gst_pad_get_current_caps (pad), handle); /* Not drop buffer with 'return FALSE'*/
+			_mm_transcode_video_capsfilter(gst_pad_get_current_caps (pad), handle); /* Not drop buffer with 'return FALSE'*/
 
 			if(handle->param->seeking) {
-                debug_log("[VIDEO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
-                GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
+				debug_log("[VIDEO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
+				GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
 			}
 		}
 	}
