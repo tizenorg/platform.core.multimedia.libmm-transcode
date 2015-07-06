@@ -111,15 +111,15 @@ mm_audioencoder_e audioencoder)
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	debug_log("%s== %s", handle->property->sourcefile, in_Filename);
-	if(0 == strlen(handle->property->sourcefile) || 0 == strcmp(handle->property->sourcefile, in_Filename)) { /* protect the case of changing input file during transcoding */
-		/* set element*/
-		ret = _mm_transcode_set_handle_element(handle, in_Filename, containerformat, videoencoder, audioencoder);
-		if(ret != MM_ERROR_NONE) {
-			debug_error("ERROR -Set element");
-			return ret;
-		}
+	/* set element*/
+	ret = _mm_transcode_set_handle_element(handle, in_Filename, containerformat, videoencoder, audioencoder);
+	if(ret != MM_ERROR_NONE) {
+		debug_error("ERROR -Set element");
+		return ret;
+	}
 
+	debug_log("%s == %s", handle->property->sourcefile, in_Filename);
+	if(0 == strlen(handle->property->sourcefile) || 0 == strcmp(handle->property->sourcefile, in_Filename)) { /* protect the case of changing input file during transcoding */
 		/* setup */
 		ret = _mm_setup_pipeline(handle);
 		if(ret == MM_ERROR_NONE) {
