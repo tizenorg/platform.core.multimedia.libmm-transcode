@@ -230,6 +230,18 @@ _mm_cleanup_pipeline(handle_s *handle)
 		debug_log("g_source_remove (progrss_event_id)");
 	}
 
+	if(handle->encodebin->audio_event_probe_id) {
+		g_source_remove (handle->encodebin->audio_event_probe_id);
+		handle->encodebin->audio_event_probe_id = 0;
+		debug_log("g_source_remove (audio_event_probe_id)");
+	}
+
+	if(handle->encodebin->video_event_probe_id) {
+		g_source_remove (handle->encodebin->video_event_probe_id);
+		handle->property->video_cb_probe_id = 0;
+		debug_log("g_source_remove (video_event_probe_id)");
+	}
+
 	TRANSCODE_FREE (handle->property->mux);
 	TRANSCODE_FREE (handle->property->venc);
 	TRANSCODE_FREE (handle->property->aenc);
@@ -729,6 +741,10 @@ _mm_encodebin_link(handle_s *handle)
 			if (handle->encodebin->encvideopad) {
 				debug_log("encvideopad: 0x%2x", handle->encodebin->encvideopad);
 				gst_pad_link(handle->decoder_vidp->srcdecvideopad, handle->encodebin->encvideopad);
+				handle->encodebin->audio_event_probe_id =
+					gst_pad_add_probe (handle->encodebin->encvideopad,
+					GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
+					_mm_cb_encodebin_sinkpad_event_probe, handle, NULL);
 			} else {
 				debug_error("error encvideopad");
 				return MM_ERROR_TRANSCODE_INTERNAL;
@@ -742,6 +758,10 @@ _mm_encodebin_link(handle_s *handle)
 			if (handle->encodebin->encaudiopad) {
 				debug_log("encaudiopad: 0x%2x", handle->encodebin->encaudiopad);
 				gst_pad_link(handle->decoder_audp->srcdecaudiopad, handle->encodebin->encaudiopad);
+				handle->encodebin->audio_event_probe_id =
+					gst_pad_add_probe (handle->encodebin->encaudiopad,
+					GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
+					_mm_cb_encodebin_sinkpad_event_probe, handle, NULL);
 			} else {
 				debug_error("error encaudiopad");
 				return MM_ERROR_TRANSCODE_INTERNAL;

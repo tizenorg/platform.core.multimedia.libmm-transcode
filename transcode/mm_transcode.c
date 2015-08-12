@@ -321,7 +321,7 @@ mm_transcode_cancel (MMHandleType MMHandle)
 			debug_error("unlink error");
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
-
+		g_mutex_lock (handle->property->thread_mutex);
 		g_cond_signal(handle->property->thread_cond);
 		debug_log("===> send completed signal <-cancel");
 		g_mutex_unlock (handle->property->thread_mutex);

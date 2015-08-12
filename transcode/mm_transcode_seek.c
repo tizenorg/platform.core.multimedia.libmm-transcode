@@ -56,11 +56,11 @@ _mm_cb_audio_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 			if (current_caps)
 				gst_caps_unref(current_caps);
+		}
 
-			if (handle->param->seeking) {
-				debug_log("[AUDIO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
-				GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
-			}
+		if (handle->param->seeking) {
+			/* Shifting the decoded out buffer time as the start time */
+			GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) -= start_pos_ts;
 		}
 	}
 	return GST_PAD_PROBE_OK;
@@ -91,15 +91,69 @@ _mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 			if (current_caps)
 				gst_caps_unref(current_caps);
+		}
 
-			if(handle->param->seeking) {
-				debug_log("[VIDEO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
-				GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
-			}
+		if(handle->param->seeking) {
+			/* Shifting the decoded out buffer time as the start time */
+			GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) -= start_pos_ts;
 		}
 	}
 	return GST_PAD_PROBE_OK;
 }
+
+GstPadProbeReturn
+_mm_cb_encodebin_sinkpad_event_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
+{
+	handle_s *handle = (handle_s*) user_data;
+	GstEvent *event = GST_PAD_PROBE_INFO_EVENT(info);
+
+	if (!handle) {
+		debug_error("[ERROR] - handle");
+		return GST_PAD_PROBE_REMOVE;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return GST_PAD_PROBE_REMOVE;
+	}
+
+	if (!event) {
+		debug_error("[ERROR] - event");
+		return GST_PAD_PROBE_REMOVE;
+	}
+
+	switch (GST_EVENT_TYPE(event)) {
+	case GST_EVENT_SEGMENT:
+	{
+		if (!handle->param->seeking)
+			break;
+
+		const GstSegment *segment = NULL;
+		GstSegment *new_segment = NULL;
+		gst_event_parse_segment (event, &segment);
+		if (segment->format != GST_FORMAT_TIME)
+			break;
+
+		new_segment = gst_segment_copy(segment);
+		gst_event_unref (event);
+
+		new_segment->start = 0;
+		new_segment->stop = handle->param->duration * G_GINT64_CONSTANT(1000000);
+
+		/* replace the new segment (change start/stop position) */
+		GstEvent *new_event = gst_event_new_segment(new_segment);
+
+		GST_PAD_PROBE_INFO_DATA(info) = new_event;
+	}
+
+		break;
+	default:
+		break;
+	}
+
+	return GST_PAD_PROBE_OK;
+}
+
 
 
 GstAutoplugSelectResult
@@ -299,7 +353,9 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 		gchar *debug;
 		gst_message_parse_error (message, &err, &debug);
 
-		debug_error("[Source: %s] Error: %s", GST_OBJECT_NAME(GST_OBJECT_CAST(GST_ELEMENT(GST_MESSAGE_SRC (message)))), err->message);
+		debug_error("[Source: %s] Error: %s",
+			GST_OBJECT_NAME(GST_OBJECT_CAST(GST_ELEMENT(GST_MESSAGE_SRC (message)))),
+			err->message);
 
 		ret = mm_transcode_cancel(MMHandle);
 		if(ret == MM_ERROR_NONE) {
@@ -418,7 +474,6 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 			unlink(handle->param->outputfile);
 			debug_log("[unlink] %s %d > %d", handle->param->outputfile, handle->param->start_pos, handle->property->total_length);
 		}
-
 		g_mutex_lock (handle->property->thread_mutex);
 		g_free(handle->param);
 		debug_log("g_free (param)");
@@ -446,27 +501,6 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 		break;
 	}
 	return TRUE;
-}
-
-static void
-_mm_transcode_add_sink(handle_s *handle , GstElement* sink_elements)
-{
-
-	if (!handle) {
-		debug_error("[ERROR] - handle");
-		return;
-	}
-
-	if (!handle->property) {
-		debug_error("[ERROR] - handle property");
-		return;
-	}
-
-	if(sink_elements) {
-		handle->property->sink_elements = g_list_append(handle->property->sink_elements, sink_elements);
-		debug_log("g_list_append");
-	}
-
 }
 
 static void
@@ -1078,6 +1112,8 @@ _mm_transcode_param_flush(handle_s *handle)
 	handle->encodebin->encodebin_profile = 0;
 	handle->property->AUDFLAG = 0;
 	handle->property->VIDFLAG = 0;
+	handle->encodebin->audio_event_probe_id = 0;
+	handle->encodebin->video_event_probe_id = 0;
 
 	handle->property->total_length = 0;
 	handle->property->repeat_thread_exit = FALSE;
@@ -1164,9 +1200,9 @@ _mm_transcode_seek(handle_s *handle)
 			}
 
 			if(handle->param->seek_mode == MM_SEEK_ACCURATE) {
-				_Flags = GST_SEEK_FLAG_ACCURATE;
+				_Flags = GST_SEEK_FLAG_ACCURATE | GST_SEEK_FLAG_FLUSH;
 			} else if(handle->param->seek_mode == MM_SEEK_INACCURATE) {
-				_Flags = GST_SEEK_FLAG_KEY_UNIT;
+				_Flags = GST_SEEK_FLAG_KEY_UNIT | GST_SEEK_FLAG_FLUSH;
 			}
 
 			if(!gst_element_seek(seekable_element, rate, GST_FORMAT_TIME, _Flags, GST_SEEK_TYPE_SET, start_pos, GST_SEEK_TYPE_SET, end_pos)) {
@@ -1212,7 +1248,7 @@ _mm_transcode_thread(handle_s *handle)
 		debug_error("ERROR - thread_exit_mutex is already created");
 	}
 
-	/*These are a communicator for thread*/
+	/* These are a communicator for thread */
 	if(!handle->property->queue) {
 		handle->property->queue = g_async_queue_new();
 		debug_log("create async queue: 0x%2x", handle->property->queue);
@@ -1227,7 +1263,7 @@ _mm_transcode_thread(handle_s *handle)
 		debug_error("thread cond is already created");
 	}
 
-	/*create threads*/
+	/* create threads */
 	debug_log("create thread");
 	handle->property->thread = g_thread_create ((GThreadFunc)_mm_transcode_thread_repeate, (gpointer)handle, TRUE, NULL);
 	if(!handle->property->thread) {

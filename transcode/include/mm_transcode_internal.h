@@ -151,6 +151,8 @@ typedef struct _handle_encode_s
 	GstElement *aencqueue;
 	GstElement *encodepad;
 	GstElement *encodevideo;
+	gulong video_event_probe_id;
+	gulong audio_event_probe_id;
 	int encodebin_profile;
 } handle_encode_s;
 
@@ -239,6 +241,7 @@ GstPadProbeReturn _mm_cb_audio_output_stream_probe(GstPad *pad, GstPadProbeInfo 
 GstAutoplugSelectResult _mm_cb_decode_bin_autoplug_select(GstElement * element, GstPad * pad, GstCaps * caps, GstElementFactory * factory, handle_s *handle);
 void _mm_cb_decoder_newpad_encoder(GstElement *decodebin, GstPad *pad, handle_s *handle);
 GstPadProbeReturn _mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
+GstPadProbeReturn _mm_cb_encodebin_sinkpad_event_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
 gboolean _mm_cb_print_position(handle_s *handle);
 gboolean _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata);
 const gchar* _mm_check_media_type(GstCaps *caps);
