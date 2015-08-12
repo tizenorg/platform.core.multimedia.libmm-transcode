@@ -382,7 +382,9 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 		GstState State_Old, State_New, State_Pending;
 		gst_message_parse_state_changed (message, &State_Old, &State_New, &State_Pending);
 
-		debug_log("[Source: %s] [State: %d -> %d]", GST_OBJECT_NAME(GST_OBJECT_CAST(GST_ELEMENT(GST_MESSAGE_SRC (message)))), State_Old, State_New);
+		debug_log("[Source: %s] [State: %d -> %d]",
+			GST_OBJECT_NAME(GST_OBJECT_CAST(GST_ELEMENT(GST_MESSAGE_SRC (message)))),
+			State_Old, State_New);
 
 		if (State_Old == GST_STATE_NULL && State_New == GST_STATE_READY) {
 			debug_log("[Set State: Pause]");
@@ -532,16 +534,13 @@ _mm_transcode_audio_capsfilter(GstCaps *caps, handle_s *handle)
 				"channels", G_TYPE_INT, 1, NULL);
 	} else if(!strcmp(handle->property->aenc, AACENC)) {
 		caps = gst_caps_new_simple("audio/x-raw",
-				"width", G_TYPE_INT, 16,
-				"depth", G_TYPE_INT, 16,
 				"rate", G_TYPE_INT, 44100,
 				"channels", G_TYPE_INT, 1, NULL);
-		gst_caps_set_simple (caps, "bitrate", GST_TYPE_INT_RANGE, 22050, 96000, NULL);
-		debug_log("gst_caps_set_simple");
 	}
+
 	TRANSCODE_FREE(handle->property->audiodecodename);
-	g_object_set(G_OBJECT(handle->encodebin->encbin), ACAPS, caps, NULL);
-	debug_log("%s audiocaps: %s", handle->property->aenc, gst_caps_to_string(caps));
+	g_object_set(G_OBJECT(handle->decoder_audp->audflt), "caps", caps, NULL);
+	debug_log("%s audiocaps: %s", "audio decoder capsfilter", gst_caps_to_string(caps));
 }
 
 int
