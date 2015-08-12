@@ -458,7 +458,7 @@ _mm_decode_video_output_create(handle_s *handle)
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	g_object_set (handle->decoder_vidp->videorate, "drop-only", TRUE,"average-period", GST_SECOND/2, NULL);
+	g_object_set (handle->decoder_vidp->videorate, "average-period", GST_SECOND/2, NULL);
 	g_object_set (handle->decoder_vidp->videorate, "max-rate", 30, NULL);
 
 	handle->decoder_vidp->videoscale = gst_element_factory_make("videoscale", "scaler");
@@ -906,8 +906,8 @@ _mm_encodebin_set_video_property(handle_s *handle)
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-		g_object_get(G_OBJECT(handle->encodebin->encbin), "use-venc-queue", &(handle->encodebin->use_vencqueue), NULL);
-		debug_log("vencqueue : %d", handle->encodebin->use_vencqueue);
+		g_object_get(G_OBJECT(handle->encodebin->encbin), "use-venc-queue", &(handle->encodebin->vencqueue), NULL);
+		debug_log("vencqueue : %s", GST_ELEMENT_NAME(handle->encodebin->vencqueue));
 	}
 
 	return ret;
