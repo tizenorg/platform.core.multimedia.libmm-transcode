@@ -37,18 +37,18 @@ _mm_encodebin_set_venc_aenc(handle_s *handle)
 	}
 
 	handle->property->mux = malloc(sizeof(gchar) * ENC_BUFFER_SIZE);
-	if(handle->property->mux == NULL) {
+	if (handle->property->mux == NULL) {
 		debug_error("[NULL] mux");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	handle->property->venc = malloc(sizeof(gchar) * ENC_BUFFER_SIZE);
-	if(handle->property->venc == NULL) {
+	if (handle->property->venc == NULL) {
 		debug_error("[NULL] venc");
 		TRANSCODE_FREE(handle->property->mux);
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 	handle->property->aenc = malloc(sizeof(gchar) * ENC_BUFFER_SIZE);
-	if(handle->property->aenc == NULL) {
+	if (handle->property->aenc == NULL) {
 		debug_error("[NULL] aenc");
 		TRANSCODE_FREE(handle->property->mux);
 		TRANSCODE_FREE(handle->property->venc);
@@ -62,7 +62,7 @@ _mm_encodebin_set_venc_aenc(handle_s *handle)
 	switch(handle->property->containerformat) {
 		case MM_CONTAINER_3GP :
 		case MM_CONTAINER_MP4 :
-			if(handle->property->videoencoder == MM_VIDEOENCODER_NO_USE && handle->property->audioencoder == MM_AUDIOENCODER_AAC) {
+			if (handle->property->videoencoder == MM_VIDEOENCODER_NO_USE && handle->property->audioencoder == MM_AUDIOENCODER_AAC) {
 				strncpy(handle->property->mux, MUXAAC, ENC_BUFFER_SIZE-1);
 			} else {
 				strncpy(handle->property->mux, MUX3GP, ENC_BUFFER_SIZE-1);

@@ -28,7 +28,7 @@ mm_transcode_create(MMHandleType* MMHandle)
 	handle_s *handle = NULL;
 
 	/* Check argument here */
-	if(MMHandle == NULL) {
+	if (MMHandle == NULL) {
 		debug_error ("Invalid arguments [tag null]\n");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -67,7 +67,7 @@ mm_transcode_create(MMHandleType* MMHandle)
 
 	*MMHandle = (MMHandleType)handle;
 
-	if(MMHandle) {
+	if (MMHandle) {
 		debug_log("MMHandle: 0x%2x", handle);
 		handle->property->_MMHandle = 0;
 	} else {
@@ -96,33 +96,33 @@ mm_audioencoder_e audioencoder)
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if((in_Filename == NULL) || (strlen (in_Filename) == 0)) {
+	if ((in_Filename == NULL) || (strlen (in_Filename) == 0)) {
 		debug_error("Invalid Input file");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(videoencoder == MM_VIDEOENCODER_NO_USE && audioencoder == MM_AUDIOENCODER_NO_USE) {
+	if (videoencoder == MM_VIDEOENCODER_NO_USE && audioencoder == MM_AUDIOENCODER_NO_USE) {
 		debug_error("No encoder resource");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(videoencoder == MM_VIDEOENCODER_H264) {
+	if (videoencoder == MM_VIDEOENCODER_H264) {
 		debug_error("Can't support encoding to H264");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
 	/* set element*/
 	ret = _mm_transcode_set_handle_element(handle, in_Filename, containerformat, videoencoder, audioencoder);
-	if(ret != MM_ERROR_NONE) {
+	if (ret != MM_ERROR_NONE) {
 		debug_error("ERROR -Set element");
 		return ret;
 	}
 
 	debug_log("%s == %s", handle->property->sourcefile, in_Filename);
-	if(0 == strlen(handle->property->sourcefile) || 0 == strcmp(handle->property->sourcefile, in_Filename)) { /* protect the case of changing input file during transcoding */
+	if (0 == strlen(handle->property->sourcefile) || 0 == strcmp(handle->property->sourcefile, in_Filename)) { /* protect the case of changing input file during transcoding */
 		/* setup */
 		ret = _mm_setup_pipeline(handle);
-		if(ret == MM_ERROR_NONE) {
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Setup Pipeline");
 		} else{
 			debug_error("ERROR - Setup Pipeline");
@@ -131,7 +131,7 @@ mm_audioencoder_e audioencoder)
 
 		/* video / auido stream */
 		ret = _mm_transcode_get_stream_info(handle);
-		if(ret == MM_ERROR_NONE) {
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Get stream info");
 		} else{
 			debug_error("ERROR - Get stream info");
@@ -140,7 +140,7 @@ mm_audioencoder_e audioencoder)
 
 		/* create pipeline */
 		ret = _mm_transcode_create(handle);
-		if(ret == MM_ERROR_NONE) {
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Create Pipeline");
 		} else{
 			debug_error("ERROR -Create Pipeline");
@@ -149,7 +149,7 @@ mm_audioencoder_e audioencoder)
 
 		/*link pipeline */
 		ret = _mm_transcode_link(handle);
-		if(ret == MM_ERROR_NONE) {
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Link pipeline");
 		} else{
 			debug_error("ERROR - Link pipeline");
@@ -158,7 +158,7 @@ mm_audioencoder_e audioencoder)
 
 		/* flush param */
 		ret = _mm_transcode_param_flush(handle);
-		if(ret == MM_ERROR_NONE) {
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Init parameter");
 		} else{
 			debug_error("ERROR - Init parameter");
@@ -167,7 +167,7 @@ mm_audioencoder_e audioencoder)
 
 		/* create thread */
 		ret = _mm_transcode_thread(handle);
-		if(ret == MM_ERROR_NONE) {
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Link pipeline");
 		} else{
 			debug_error("ERROR - Link pipeline");
@@ -203,17 +203,17 @@ mm_transcode (MMHandleType MMHandle, unsigned int resolution_width, unsigned int
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(!completed_callback) {
+	if (!completed_callback) {
 		debug_error("[ERROR] - completed_callback");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(!out_Filename) {
+	if (!out_Filename) {
 		debug_error("[ERROR] - out_Filename");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
 
-	if(duration < MIN_DURATION && duration !=0) {
+	if (duration < MIN_DURATION && duration !=0) {
 		debug_error("The minimum seek duration is 1000 msec ");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -231,22 +231,22 @@ mm_transcode (MMHandleType MMHandle, unsigned int resolution_width, unsigned int
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(handle->property->_MMHandle == 1) { /* check if prepare is called during transcoding */
+	if (handle->property->_MMHandle == 1) { /* check if prepare is called during transcoding */
 		handle_param_s *param = g_new0 (handle_param_s, 1);
-		if(param) {
+		if (param) {
 			/*g_value_init (param, G_TYPE_INT);*/
 			debug_log("[param] 0x%2x", param);
 		}
 
 		/* set parameter*/
 		ret = _mm_transcode_set_handle_parameter(param, resolution_width, resolution_height, fps_value, start_position, duration, seek_mode, out_Filename);
-		if(ret != MM_ERROR_NONE) {
+		if (ret != MM_ERROR_NONE) {
 			debug_error("ERROR -Set parameter");
 			return ret;
 		}
 
 		ret = _mm_transcode_preset_capsfilter(handle, resolution_width, resolution_height);
-		if(ret == MM_ERROR_NONE) {
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Preset Capsfilter");
 		} else{
 			debug_error("ERROR - Preset Capsfilter");
@@ -306,15 +306,15 @@ mm_transcode_cancel (MMHandleType MMHandle)
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(handle->property->is_busy) {
+	if (handle->property->is_busy) {
 		debug_log("Cancel - [IS BUSY]");
 		ret = _mm_transcode_state_change(handle, GST_STATE_NULL);
-		if(ret != MM_ERROR_NONE) {
+		if (ret != MM_ERROR_NONE) {
 			debug_error("ERROR - Null Pipeline");
 			return ret;
 		}
 
-		if((handle->param) && (strlen(handle->param->outputfile) > 0)) {
+		if ((handle->param) && (strlen(handle->param->outputfile) > 0)) {
 			unlink(handle->param->outputfile);
 			debug_log("[Cancel] unlink %s", handle->param->outputfile);
 		} else {
@@ -351,9 +351,9 @@ mm_transcode_destroy (MMHandleType MMHandle)
 
 	g_mutex_lock(handle->property->thread_exit_mutex);
 	handle->property->repeat_thread_exit = TRUE;
-	if(handle->property->is_busy) {
+	if (handle->property->is_busy) {
 		ret = mm_transcode_cancel(MMHandle);
-		if(ret == MM_ERROR_NONE) {
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Cancel Transcode");
 		} else{
 			debug_error("ERROR - Cancel Transcode");
@@ -364,7 +364,7 @@ mm_transcode_destroy (MMHandleType MMHandle)
 	g_mutex_unlock(handle->property->thread_exit_mutex);
 
 	handle_param_s *param = g_new0 (handle_param_s, 1);
-	if(param) {
+	if (param) {
 		debug_log("[Try to Push Last Queue]");
 		g_async_queue_push (handle->property->queue, GINT_TO_POINTER(param));
 	} else {
@@ -373,26 +373,26 @@ mm_transcode_destroy (MMHandleType MMHandle)
 	}
 
 	ret = _mm_transcode_state_change(handle, GST_STATE_NULL);
-	if(ret != MM_ERROR_NONE) {
+	if (ret != MM_ERROR_NONE) {
 		debug_error("ERROR - Null Pipeline");
 		return ret;
 	} else {
 		debug_log("SUCCESS - Null Pipeline");
 	}
 
-	if((handle->param) && (!handle->param->completed)) {
+	if ((handle->param) && (!handle->param->completed)) {
 		g_cond_signal(handle->property->thread_cond);
 		debug_log("===> send completed signal <-destroy");
 		g_mutex_unlock (handle->property->thread_mutex);
 		debug_log("unlock destory");
-		if(strlen(handle->param->outputfile) > 0) {
+		if (strlen(handle->param->outputfile) > 0) {
 			unlink(handle->param->outputfile);
 			debug_log("[Cancel] unlink %s", handle->param->outputfile);
 		}
 	}
 
 	ret = _mm_cleanup_pipeline(handle);
-	if(ret == MM_ERROR_NONE) {
+	if (ret == MM_ERROR_NONE) {
 		debug_log("Success - CleanUp Pipeline");
 	} else{
 		debug_error("ERROR - CleanUp Pipeline");
@@ -422,7 +422,7 @@ mm_transcode_get_attrs(MMHandleType MMHandle, mm_containerformat_e *containerfor
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(!containerformat || !videoencoder ||!audioencoder || !current_pos || !duration || !resolution_width || !resolution_height) {
+	if (!containerformat || !videoencoder ||!audioencoder || !current_pos || !duration || !resolution_width || !resolution_height) {
 		debug_error("[ERROR] - Invalid argument pointer");
 		return MM_ERROR_INVALID_ARGUMENT;
 	}
@@ -436,7 +436,7 @@ mm_transcode_get_attrs(MMHandleType MMHandle, mm_containerformat_e *containerfor
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
 
-	if(handle->property->current_pos > handle->param->duration) {
+	if (handle->property->current_pos > handle->param->duration) {
 		*current_pos = handle->param->duration;
 	} else {
 		*current_pos = handle->property->current_pos;
@@ -456,8 +456,8 @@ mm_transcode_get_supported_container_format(mm_transcode_support_type_callback t
 {
 	int idx = 0;
 
-	for(idx = 0; idx < MM_CONTAINER_NUM; idx++) {
-		if(type_callback(idx, user_param) == false)
+	for (idx = 0; idx < MM_CONTAINER_NUM; idx++) {
+		if (type_callback(idx, user_param) == false)
 		{
 			debug_error("error occured. idx[%d]", idx);
 			break;
@@ -472,8 +472,8 @@ mm_transcode_get_supported_video_encoder(mm_transcode_support_type_callback type
 {
 	int idx = 0;
 
-	for(idx = 0; idx < MM_VIDEOENCODER_H264; idx++) {
-		if(type_callback(idx, user_param) == false)
+	for (idx = 0; idx < MM_VIDEOENCODER_H264; idx++) {
+		if (type_callback(idx, user_param) == false)
 		{
 			debug_error("error occured. idx[%d]", idx);
 			break;
@@ -488,8 +488,8 @@ mm_transcode_get_supported_audio_encoder(mm_transcode_support_type_callback type
 {
 	int idx = 0;
 
-	for(idx = 0; idx < MM_AUDIOENCODER_NO_USE; idx++) {
-		if(type_callback(idx, user_param) == false)
+	for (idx = 0; idx < MM_AUDIOENCODER_NO_USE; idx++) {
+		if (type_callback(idx, user_param) == false)
 		{
 			debug_error("error occured. idx[%d]", idx);
 			break;
