@@ -369,7 +369,7 @@ _mm_decode_audio_output_link(handle_s *handle)
 		handle->decoder_audp->sinkdecaudiopad = gst_element_get_static_pad (handle->decoder_audp->decaudiobin, "decbin_audiosink"); /* get sink audiopad of decodebin */
 		handle->decoder_audp->srcdecaudiopad = gst_element_get_static_pad (handle->decoder_audp->decaudiobin, "decbin_audiosrc"); /* get src audiopad of decodebin */
 
-        handle->property->audio_cb_probe_id = gst_pad_add_probe (handle->decoder_audp->sinkdecaudiopad, GST_PAD_PROBE_TYPE_BUFFER, _mm_cb_audio_output_stream_probe, handle, NULL);
+		handle->property->audio_cb_probe_id = gst_pad_add_probe (handle->decoder_audp->sinkdecaudiopad, GST_PAD_PROBE_TYPE_BUFFER, _mm_cb_audio_output_stream_probe, handle, NULL);
 		debug_log("audio_cb_probe_id: %d", handle->property->audio_cb_probe_id); /* must use sinkpad (sinkpad => srcpad) for normal resized video buffer*/
 	}
 
@@ -716,7 +716,7 @@ _mm_encodebin_link(handle_s *handle)
 			handle->encodebin->encaudiopad = gst_element_get_request_pad(handle->encodebin->encbin, "audio");
 			if(handle->encodebin->encaudiopad) {
 				debug_log("encaudiopad: 0x%2x", handle->encodebin->encaudiopad);
-                		gst_pad_link(handle->decoder_audp->srcdecaudiopad, handle->encodebin->encaudiopad);
+					gst_pad_link(handle->decoder_audp->srcdecaudiopad, handle->encodebin->encaudiopad);
 			} else {
 				debug_error("error encaudiopad");
 				return MM_ERROR_TRANSCODE_INTERNAL;
@@ -773,7 +773,7 @@ _mm_encodebin_set_audio_property(handle_s* handle)
 			return MM_ERROR_TRANSCODE_INTERNAL;
 		}
 
-        	if(g_strcmp0(handle->property->aenc, AACENC) == 0) {
+		if(g_strcmp0(handle->property->aenc, AACENC) == 0) {
 			g_object_set(G_OBJECT(gst_bin_get_by_name(GST_BIN(handle->encodebin->encbin), "audio_encode")), AACCOMPLIANCE, AACCOMPLIANCELEVEL, NULL);
 		}
 
@@ -879,14 +879,15 @@ _mm_filesink_create(handle_s *handle)
 	}
 
 	handle->filesink = gst_element_factory_make ("filesink", "filesink");
-	debug_log("[sync]");
-	g_object_set (G_OBJECT (handle->filesink), "sync", TRUE, NULL);
-	g_object_set (G_OBJECT (handle->filesink), "async", FALSE, NULL);
 
 	if (!handle->filesink) {
 		debug_error("filesink element could not be created");
 		return MM_ERROR_TRANSCODE_INTERNAL;
 	}
+
+	debug_log("[sync]");
+	g_object_set (G_OBJECT (handle->filesink), "sync", TRUE, NULL);
+	g_object_set (G_OBJECT (handle->filesink), "async", FALSE, NULL);
 
 	return ret;
 }
