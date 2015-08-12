@@ -12,27 +12,27 @@ libmm_transcode_la_SOURCES = mm_transcode.c \
                              mm_transcode_codec.c
 
 libmm_transcode_la_CFLAGS = -I$(srcdir)/include \
-							$(MMCOMMON_CFLAGS) \
-							$(MMFILEINFO_CFLAGS) \
-							$(GLIB_CFLAGS) \
-							$(GST_CFLAGS) \
-							$(GSTAPP_CFLAGS)  \
-							$(GST_PLUGIN_BASE_CFLAGS) \
-							$(GST_INTERFACE_CFLAGS) \
-							$(GSTPBUTILS_CFLAGS) \
-							$(GST_VIDEO_LIBS) \
-							$(MMLOG_CFLAGS) -DMMF_LOG_OWNER=0x300000 -DMMF_DEBUG_PREFIX=\"MMF-VIDEOEDIT\"
+                              $(MMCOMMON_CFLAGS) \
+                              $(MMFILEINFO_CFLAGS) \
+                              $(GLIB_CFLAGS) \
+                              $(GST_CFLAGS) \
+                              $(GSTAPP_CFLAGS)  \
+                              $(GST_PLUGIN_BASE_CFLAGS) \
+                              $(GST_INTERFACE_CFLAGS) \
+                              $(GSTPBUTILS_CFLAGS) \
+                              $(GST_VIDEO_LIBS) \
+                              $(MMLOG_CFLAGS) -DMMF_LOG_OWNER=0x300000 -DMMF_DEBUG_PREFIX=\"MMF-VIDEOEDIT\"
 
 libmm_transcode_la_LIBADD = $(MMCOMMON_LIBS) \
-							$(MMFILEINFO_LIBS) \
-							$(GLIB_LIBS) \
-							$(GST_LIBS) \
-							$(GSTAPP_LIBS) \
-							$(GST_VIDEO_LIBS) \
-							$(GST_PLUGIN_BASE_LIBS) \
-							$(GST_INTERFACE_LIBS) \
-							$(GSTPBUTILS_LIBS) \
-							$(MMLOG_LIBS)
+                            $(MMFILEINFO_LIBS) \
+                            $(GLIB_LIBS) \
+                            $(GST_LIBS) \
+                            $(GSTAPP_LIBS) \
+                            $(GST_VIDEO_LIBS) \
+                            $(GST_PLUGIN_BASE_LIBS) \
+                            $(GST_INTERFACE_LIBS) \
+                            $(GSTPBUTILS_LIBS) \
+                            $(MMLOG_LIBS)
 
 pcfiles = mm-transcode.pc
 pkgconfigdir = $(libdir)/pkgconfig

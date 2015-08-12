@@ -147,8 +147,8 @@ typedef struct _handle_encode_s
 	GstPad *encaudiopad;
 	GstPad *encvideopad;
 	GstElement *ffmux;
-	int use_vencqueue;
-	int use_aencqueue;
+	GstElement *vencqueue;
+	GstElement *aencqueue;
 	GstElement *encodepad;
 	GstElement *encodevideo;
 	int encodebin_profile;

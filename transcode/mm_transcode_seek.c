@@ -21,7 +21,6 @@
 #include "mm_transcode.h"
 #include "mm_transcode_internal.h"
 
-static void _mm_transcode_add_sink(handle_s *handle, GstElement* sink_elements);
 static void _mm_transcode_audio_capsfilter(GstCaps *caps, handle_s *handle);
 static void _mm_transcode_video_capsfilter(GstCaps *caps, handle_s *handle);
 static void _mm_transcode_video_capsfilter_call(handle_s *handle);
@@ -48,18 +47,60 @@ _mm_cb_audio_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 	gint64 start_pos_ts = handle->param->start_pos * G_GINT64_CONSTANT(1000000);
 
-	if (GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
+	if (GST_BUFFER_PTS_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
 		if (0 == handle->property->AUDFLAG++) {
-			_mm_transcode_audio_capsfilter(gst_pad_get_current_caps (pad), handle); /* Need to audio caps converting when amrnbenc*/ /* Not drop buffer with 'return FALSE'*/
+			GstCaps *current_caps = gst_pad_get_current_caps (pad);
+			/* Need to audio caps converting when amrnbenc*/
+			/* Not drop buffer with 'return FALSE'*/
+			_mm_transcode_audio_capsfilter(current_caps, handle);
+
+			if (current_caps)
+				gst_caps_unref(current_caps);
 
 			if (handle->param->seeking) {
 				debug_log("[AUDIO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
-				GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
+				GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
 			}
 		}
 	}
 	return GST_PAD_PROBE_OK;
 }
+
+GstPadProbeReturn
+_mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
+{
+	handle_s *handle = (handle_s*) user_data;
+
+	if (!handle) {
+		debug_error("[ERROR] - handle");
+		return GST_PAD_PROBE_REMOVE;
+	}
+
+	if (!handle->property) {
+		debug_error("[ERROR] - handle property");
+		return GST_PAD_PROBE_REMOVE;
+	}
+
+	gint64 start_pos_ts = handle->param->start_pos * G_GINT64_CONSTANT(1000000);
+
+	if (GST_BUFFER_PTS_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
+		if (0 == handle->property->VIDFLAG++) {
+			GstCaps *current_caps = gst_pad_get_current_caps (pad);
+			/* Not drop buffer with 'return FALSE'*/
+			_mm_transcode_video_capsfilter(current_caps, handle);
+
+			if (current_caps)
+				gst_caps_unref(current_caps);
+
+			if(handle->param->seeking) {
+				debug_log("[VIDEO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
+				GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
+			}
+		}
+	}
+	return GST_PAD_PROBE_OK;
+}
+
 
 GstAutoplugSelectResult
 _mm_cb_decode_bin_autoplug_select(GstElement * element, GstPad * pad, GstCaps * caps, GstElementFactory * factory, handle_s *handle)
@@ -85,12 +126,12 @@ _mm_cb_decode_bin_autoplug_select(GstElement * element, GstPad * pad, GstCaps * 
 			return GST_AUTOPLUG_SELECT_TRY;
 		}
 		memset(handle->property->audiodecodename, 0, ENC_BUFFER_SIZE);
-		strncpy(handle->property->audiodecodename, feature_name, ENC_BUFFER_SIZE-1);
+		strncpy(handle->property->audiodecodename, feature_name, strlen(feature_name));
 		debug_log ("[audio decode name %s : %s]", caps_str, handle->property->audiodecodename);
 	}
 
 	if(g_strrstr(caps_str, "video")) {
-		if(g_strrstr(feature_name, "omx")) {
+		if(g_strrstr(feature_name, "omx") || g_strrstr(feature_name, "sprd")) {
 			/* emit autoplug-select to see what we should do with it. */
 			debug_log("SKIP HW Codec");
 			return GST_AUTOPLUG_SELECT_SKIP;
@@ -101,7 +142,7 @@ _mm_cb_decode_bin_autoplug_select(GstElement * element, GstPad * pad, GstCaps * 
 			return GST_AUTOPLUG_SELECT_TRY;
 		}
 		memset(handle->property->videodecodename, 0, ENC_BUFFER_SIZE);
-		strncpy(handle->property->videodecodename, feature_name, ENC_BUFFER_SIZE-1);
+		strncpy(handle->property->videodecodename, feature_name, strlen(feature_name));
 		debug_log ("[video decode name %s : %s]", caps_str, handle->property->videodecodename);
 	}
 
@@ -230,36 +271,6 @@ _mm_cb_print_position(handle_s *handle)
 	}
 
 	return TRUE;
-}
-
-GstPadProbeReturn
-_mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
-{
-	handle_s *handle = (handle_s*) user_data;
-
-	if (!handle) {
-		debug_error("[ERROR] - handle");
-		return GST_PAD_PROBE_REMOVE;
-	}
-
-	if (!handle->property) {
-		debug_error("[ERROR] - handle property");
-		return GST_PAD_PROBE_REMOVE;
-	}
-
-	gint64 start_pos_ts = handle->param->start_pos * G_GINT64_CONSTANT(1000000);
-
-	if (GST_BUFFER_TIMESTAMP_IS_VALID (GST_PAD_PROBE_INFO_BUFFER(info))) {
-		if (0 == handle->property->VIDFLAG++) {
-			_mm_transcode_video_capsfilter(gst_pad_get_current_caps (pad), handle); /* Not drop buffer with 'return FALSE'*/
-
-			if(handle->param->seeking) {
-				debug_log("[VIDEO BUFFER TIMESTAMP] ([%"G_GUINT64_FORMAT"])", start_pos_ts);
-				GST_BUFFER_TIMESTAMP (GST_PAD_PROBE_INFO_BUFFER(info)) = start_pos_ts;
-			}
-		}
-	}
-	return GST_PAD_PROBE_OK;
 }
 
 gboolean
@@ -968,7 +979,6 @@ _mm_transcode_set_handle_parameter(handle_param_s *param, unsigned int resolutio
 		memset(param->outputfile, 0, BUFFER_SIZE);
 		strncpy(param->outputfile, out_Filename, strlen (out_Filename));
 		debug_log("%s(%d)", param->outputfile, strlen (out_Filename));
-		debug_log("output file name: %s", param->outputfile);
 	} else {
 		debug_error("out_Filename error");
 		return MM_ERROR_INVALID_ARGUMENT;
