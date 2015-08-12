@@ -60,7 +60,15 @@ _mm_cb_audio_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 		if (handle->param->seeking) {
 			/* Shifting the decoded out buffer time as the start time */
-			GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) -= start_pos_ts;
+			if (GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) >= start_pos_ts) {
+				GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) -= start_pos_ts;
+			} else {
+				/* If input buffer time is less than start position,
+				 * input buffer will be dropped.
+				 */
+				return GST_PAD_PROBE_DROP;
+			}
+
 		}
 	}
 	return GST_PAD_PROBE_OK;
@@ -95,7 +103,15 @@ _mm_cb_video_output_stream_probe(GstPad *pad, GstPadProbeInfo *info, gpointer us
 
 		if(handle->param->seeking) {
 			/* Shifting the decoded out buffer time as the start time */
-			GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) -= start_pos_ts;
+			if (GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) >= start_pos_ts) {
+				GST_BUFFER_PTS (GST_PAD_PROBE_INFO_BUFFER(info)) -= start_pos_ts;
+			} else {
+				/* If input buffer time is less than start position,
+				 * input buffer will be dropped.
+				 */
+				return GST_PAD_PROBE_DROP;
+			}
+
 		}
 	}
 	return GST_PAD_PROBE_OK;
