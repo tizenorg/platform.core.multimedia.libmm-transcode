@@ -1032,11 +1032,20 @@ _mm_transcode_preset_capsfilter(handle_s *handle, unsigned int resolution_width,
 
 	if (handle->decoder_vidp->vidflt) {
 		debug_log("[Resolution] Output Width: [%d], Output Height: [%d]", resolution_width, resolution_height);
-		g_object_set (G_OBJECT (handle->decoder_vidp->vidflt), "caps", gst_caps_new_simple("video/x-raw",
-                                "format", G_TYPE_STRING, "I420",
-								"width", G_TYPE_INT, resolution_width,
-								"height", G_TYPE_INT, resolution_height,
-								NULL), NULL);
+
+		if (resolution_width == 0 || resolution_height == 0) {
+			g_object_set (G_OBJECT (handle->decoder_vidp->vidflt), "caps",
+				gst_caps_new_simple("video/x-raw",
+									"format", G_TYPE_STRING, "I420",
+									NULL), NULL);
+		} else {
+			g_object_set (G_OBJECT (handle->decoder_vidp->vidflt), "caps",
+				gst_caps_new_simple("video/x-raw",
+									"format", G_TYPE_STRING, "I420",
+									"width", G_TYPE_INT, resolution_width,
+									"height", G_TYPE_INT, resolution_height,
+									NULL), NULL);
+		}
 	};
 
 	return ret;

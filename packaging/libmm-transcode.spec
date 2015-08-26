@@ -1,7 +1,7 @@
 Name:       libmm-transcode
 Summary:    Multimedia Framework Video Transcode Library
-Version:    0.9
-Release:    9
+Version:    0.10
+Release:    1
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
