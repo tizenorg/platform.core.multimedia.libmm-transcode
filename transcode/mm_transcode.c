@@ -44,25 +44,25 @@ mm_transcode_create(MMHandleType* MMHandle)
 	handle->decoder_vidp= g_new0 (handle_vidp_plugin_s, 1);
 	if (!handle->decoder_vidp) {
 		debug_error("[ERROR] - handle decoder video process bin");
-		return MM_ERROR_TRANSCODE_INTERNAL;
+		goto ERROR5;
 	}
 
 	handle->decoder_audp= g_new0 (handle_audp_plugin_s, 1);
 	if (!handle->decoder_audp) {
 		debug_error("[ERROR] - handle decoder audio process bin");
-		return MM_ERROR_TRANSCODE_INTERNAL;
+		goto ERROR4;
 	}
 
 	handle->encodebin= g_new0 (handle_encode_s, 1);
 	if (!handle->encodebin) {
 		debug_error("[ERROR] - handle encodebin");
-		return MM_ERROR_TRANSCODE_INTERNAL;
+		goto ERROR3;
 	}
 
 	handle->property = g_new0 (handle_property_s, 1);
 	if (!handle->property) {
 		debug_error("[ERROR] - handle property");
-		return MM_ERROR_TRANSCODE_INTERNAL;
+		goto ERROR2;
 	}
 
 	*MMHandle = (MMHandleType)handle;
@@ -72,10 +72,22 @@ mm_transcode_create(MMHandleType* MMHandle)
 		handle->property->_MMHandle = 0;
 	} else {
 		debug_error("handle create Fail");
-		return MM_ERROR_TRANSCODE_INTERNAL;
+		goto ERROR1;
 	}
 
 	return ret;
+
+ERROR1:
+	TRANSCODE_FREE (handle->property);
+ERROR2:
+	TRANSCODE_FREE (handle->encodebin);
+ERROR3:
+	TRANSCODE_FREE (handle->decoder_audp);
+ERROR4:
+	TRANSCODE_FREE (handle->decoder_vidp);
+ERROR5:
+	TRANSCODE_FREE (handle);
+	return MM_ERROR_TRANSCODE_INTERNAL;
 }
 
 int

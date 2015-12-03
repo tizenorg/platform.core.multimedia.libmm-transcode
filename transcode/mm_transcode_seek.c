@@ -153,6 +153,11 @@ _mm_cb_encodebin_sinkpad_event_probe(GstPad *pad, GstPadProbeInfo *info, gpointe
 		new_segment = gst_segment_copy(segment);
 		gst_event_unref (event);
 
+		if (!new_segment) {
+			debug_error ("[ERROR] segment copy error");
+			return GST_PAD_PROBE_REMOVE;
+		}
+
 		new_segment->start = 0;
 		new_segment->stop = handle->param->duration * G_GINT64_CONSTANT(1000000);
 
@@ -369,6 +374,11 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 		gchar *debug;
 		gst_message_parse_error (message, &err, &debug);
 
+		if (!err) {
+			debug_warning("Fail to parse error message");
+			break;
+		}
+
 		debug_error("[Source: %s] Error: %s",
 			GST_OBJECT_NAME(GST_OBJECT_CAST(GST_ELEMENT(GST_MESSAGE_SRC (message)))),
 			err->message);
@@ -381,10 +391,9 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 			return FALSE;
 		}
 
-		if (err) {
-			g_error_free (err);
-			err = NULL;
-		}
+		g_error_free (err);
+		err = NULL;
+
 		TRANSCODE_FREE(debug);
 		TRANSCODE_FREE(handle->param);
 		/* g_main_loop_quit (handle->loop); */
@@ -493,8 +502,6 @@ _mm_cb_transcode_bus(GstBus * bus, GstMessage * message, gpointer userdata)
 			debug_log("[unlink] %s %d > %d", handle->param->outputfile, handle->param->start_pos, handle->property->total_length);
 		}
 		g_mutex_lock (handle->property->thread_mutex);
-		g_free(handle->param);
-		debug_log("g_free (param)");
 		handle->param->completed = TRUE;
 		handle->property->is_busy = FALSE;
 		g_cond_signal(handle->property->thread_cond);
