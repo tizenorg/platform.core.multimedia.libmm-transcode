@@ -21,8 +21,7 @@
 #include "mm_transcode.h"
 #include "mm_transcode_internal.h"
 
-int
-_mm_encodebin_set_venc_aenc(handle_s *handle)
+int _mm_encodebin_set_venc_aenc(handle_s *handle)
 {
 	int ret = MM_ERROR_NONE;
 
@@ -59,52 +58,51 @@ _mm_encodebin_set_venc_aenc(handle_s *handle)
 	memset(handle->property->venc, 0, ENC_BUFFER_SIZE);
 	memset(handle->property->aenc, 0, ENC_BUFFER_SIZE);
 
-	switch(handle->property->containerformat) {
-		case MM_CONTAINER_3GP :
-		case MM_CONTAINER_MP4 :
-			if (handle->property->videoencoder == MM_VIDEOENCODER_NO_USE && handle->property->audioencoder == MM_AUDIOENCODER_AAC) {
-				strncpy(handle->property->mux, MUXAAC, ENC_BUFFER_SIZE-1);
-			} else {
-				strncpy(handle->property->mux, MUX3GP, ENC_BUFFER_SIZE-1);
-			}
-			break;
-		default :
-			debug_error("error container value");
-			break;
+	switch (handle->property->containerformat) {
+	case MM_CONTAINER_3GP:
+	case MM_CONTAINER_MP4:
+		if (handle->property->videoencoder == MM_VIDEOENCODER_NO_USE && handle->property->audioencoder == MM_AUDIOENCODER_AAC)
+			strncpy(handle->property->mux, MUXAAC, ENC_BUFFER_SIZE - 1);
+		else
+			strncpy(handle->property->mux, MUX3GP, ENC_BUFFER_SIZE - 1);
+		break;
+	default:
+		debug_error("error container value");
+		break;
 	}
 
-	switch(handle->property->videoencoder) {
-		case MM_VIDEOENCODER_MPEG4 :
-			strncpy(handle->property->venc, AVENCMPEG4, ENC_BUFFER_SIZE-1);
-			debug_log("[FFMPEG] %s", handle->property->venc);
-			break;
-		case MM_VIDEOENCODER_H263 :
-			strncpy(handle->property->venc, AVENCH263, ENC_BUFFER_SIZE-1);
-			debug_log("[FFMPEG] %s", handle->property->venc);
-			break;
-		case MM_VIDEOENCODER_NO_USE :
-			debug_log("No VIDEO");
-			break;
-		default :
-			debug_error("error videoencoder value");
-			break;
+	switch (handle->property->videoencoder) {
+	case MM_VIDEOENCODER_MPEG4:
+		strncpy(handle->property->venc, AVENCMPEG4, ENC_BUFFER_SIZE - 1);
+		debug_log("[FFMPEG] %s", handle->property->venc);
+		break;
+	case MM_VIDEOENCODER_H263:
+		strncpy(handle->property->venc, AVENCH263, ENC_BUFFER_SIZE - 1);
+		debug_log("[FFMPEG] %s", handle->property->venc);
+		break;
+	case MM_VIDEOENCODER_NO_USE:
+		debug_log("No VIDEO");
+		break;
+	default:
+		debug_error("error videoencoder value");
+		break;
 	}
 
-	switch(handle->property->audioencoder) {
-		case MM_AUDIOENCODER_AAC :
-			strncpy(handle->property->aenc, AACENC, ENC_BUFFER_SIZE-1);
-			debug_log("[FFMPEG] %s", handle->property->aenc);
-			break;
-		case MM_AUDIOENCODER_AMR :
-			strncpy(handle->property->aenc, AMRENC, ENC_BUFFER_SIZE-1);
-			debug_log("[FFMPEG] %s", handle->property->aenc);
-			break;
-		case MM_AUDIOENCODER_NO_USE :
-			debug_log("No AUDIO");
-			break;
-		default :
-			debug_error("error audioencoder value");
-			break;
+	switch (handle->property->audioencoder) {
+	case MM_AUDIOENCODER_AAC:
+		strncpy(handle->property->aenc, AACENC, ENC_BUFFER_SIZE - 1);
+		debug_log("[FFMPEG] %s", handle->property->aenc);
+		break;
+	case MM_AUDIOENCODER_AMR:
+		strncpy(handle->property->aenc, AMRENC, ENC_BUFFER_SIZE - 1);
+		debug_log("[FFMPEG] %s", handle->property->aenc);
+		break;
+	case MM_AUDIOENCODER_NO_USE:
+		debug_log("No AUDIO");
+		break;
+	default:
+		debug_error("error audioencoder value");
+		break;
 	}
 	return ret;
 }

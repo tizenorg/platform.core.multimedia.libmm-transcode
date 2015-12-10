@@ -35,39 +35,35 @@ GstBus *bus;
 static int seek_call_cnt = 0;
 static int seek_cnt = 0;
 
-bool
-transcode_completed_cb(int error, void *user_param)
+bool transcode_completed_cb(int error, void *user_param)
 {
 	debug_log("MMHandle: 0x%2x", MMHandle);
 
-	if(error == MM_ERROR_NONE) {
+	if (error == MM_ERROR_NONE) {
 		debug_log("completed");
-		#if _one_by_one
-		g_main_loop_quit (loop);
-		#endif
+#if _one_by_one
+		g_main_loop_quit(loop);
+#endif
 	}
 	return TRUE;
 }
 
-bool
-transcode_progress_cb(unsigned long  current_position, unsigned long  real_duration, void *user_parm)
+bool transcode_progress_cb(unsigned long current_position, unsigned long real_duration, void *user_parm)
 {
 	debug_log("(%d msec) / (%d msec)", current_position, real_duration);
 
 	return TRUE;
 }
 
-void
-trap(int sig)
+void trap(int sig)
 {
 	debug_log("quit thread");
 	signal(SIGINT, SIG_DFL);
-	#if _cancel
-	if(mm_transcode_cancel (MMHandle) == MM_ERROR_NONE) {
+#if _cancel
+	if (mm_transcode_cancel(MMHandle) == MM_ERROR_NONE)
 		debug_log("[Success Cancel]");
-	}
-	mm_transcode (MMHandle, 176, 144, 0, 0, 5000, 1, "/opt/usr/media/Videos/aftercancel.3gp", transcode_progress_cb, transcode_completed_cb, NULL);
-	#endif
+	mm_transcode(MMHandle, 176, 144, 0, 0, 5000, 1, "/opt/usr/media/Videos/aftercancel.3gp", transcode_progress_cb, transcode_completed_cb, NULL);
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -77,7 +73,7 @@ int main(int argc, char *argv[])
 	bool is_busy = FALSE;
 
 	mm_containerformat_e containerformat = 0;
-	mm_videoencoder_e videoencoder = 0 ;
+	mm_videoencoder_e videoencoder = 0;
 	mm_audioencoder_e audioencoder = 0;
 	unsigned int resolution_width = 0;
 	unsigned int resolution_height = 0;
@@ -87,14 +83,14 @@ int main(int argc, char *argv[])
 	unsigned int fps_value = 0;
 
 	debug_log("Success - Loop Init");
-	loop = g_main_loop_new (NULL, FALSE);
+	loop = g_main_loop_new(NULL, FALSE);
 
 	/* Create Transcode */
-	ret = mm_transcode_create (&MMHandle);
-	if(ret == MM_ERROR_NONE) {
+	ret = mm_transcode_create(&MMHandle);
+	if (ret == MM_ERROR_NONE) {
 		debug_log("Success - Create Transcode Handle");
 		debug_log("MMHandle: 0x%2x", MMHandle);
-	} else{
+	} else {
 		debug_log("ERROR - Create Transcode Handle");
 		return ret;
 	}
@@ -106,57 +102,54 @@ int main(int argc, char *argv[])
 	audioencoder = atoi(argv[5]);
 
 	/* Transcode */
-	ret = mm_transcode_prepare (MMHandle, argv[1], containerformat, videoencoder, audioencoder);
-	if(ret == MM_ERROR_NONE) {
+	ret = mm_transcode_prepare(MMHandle, argv[1], containerformat, videoencoder, audioencoder);
+	if (ret == MM_ERROR_NONE) {
 		debug_log("Success - Transcode pipeline");
-	} else{
+	} else {
 		debug_error("ERROR - Transcode pipeline");
 		return ret;
 	}
 
 	seek_call_cnt = atoi(argv[2]);
-	for(seek_cnt=0; seek_cnt<seek_call_cnt; seek_cnt++) {
-		resolution_width = atoi(argv[6+(seek_cnt* 7)]);
-		resolution_height = atoi(argv[7+(seek_cnt* 7)]);
-		fps_value = atoi(argv[8+(seek_cnt* 7)]);
-		start_pos = atoi(argv[9+(seek_cnt* 7)]);
-		duration = atoi(argv[10+(seek_cnt* 7)]);
-		seek_mode = atoi(argv[11+(seek_cnt* 7)]);
+	for (seek_cnt = 0; seek_cnt < seek_call_cnt; seek_cnt++) {
+		resolution_width = atoi(argv[6 + (seek_cnt * 7)]);
+		resolution_height = atoi(argv[7 + (seek_cnt * 7)]);
+		fps_value = atoi(argv[8 + (seek_cnt * 7)]);
+		start_pos = atoi(argv[9 + (seek_cnt * 7)]);
+		duration = atoi(argv[10 + (seek_cnt * 7)]);
+		seek_mode = atoi(argv[11 + (seek_cnt * 7)]);
 
 		debug_log("mm_transcode_testsuite [Input Filename] [Seek Count] [Container Format] [VENC] [AENC] [Resolution Width] [Resolution Height] [fps] [Start_position] [Duration] [Seek Accurate Mode T/F] [Output Filename]\n");
-		debug_log("container format: %d videoencoder: %d  audioencoder: %d resolution_height: %d, resolution_height: %d, start_pos: %d, duration: %d, seek_mode: %d\n",
-		containerformat, videoencoder, audioencoder, resolution_width, resolution_height, start_pos, duration, seek_mode);
+		debug_log("container format: %d videoencoder: %d  audioencoder: %d resolution_height: %d, resolution_height: %d, start_pos: %d, duration: %d, seek_mode: %d\n", containerformat, videoencoder, audioencoder, resolution_width, resolution_height, start_pos, duration, seek_mode);
 
 		/* Transcode */
-		if(mm_transcode_is_busy(MMHandle, &is_busy) == MM_ERROR_NONE) {
-			if(is_busy == FALSE) {
-				ret = mm_transcode (MMHandle, resolution_width, resolution_height, fps_value, start_pos, duration, seek_mode, argv[12+(seek_cnt* 7)], transcode_progress_cb, transcode_completed_cb, user_param);
-			} else {
+		if (mm_transcode_is_busy(MMHandle, &is_busy) == MM_ERROR_NONE) {
+			if (is_busy == FALSE)
+				ret = mm_transcode(MMHandle, resolution_width, resolution_height, fps_value, start_pos, duration, seek_mode, argv[12 + (seek_cnt * 7)], transcode_progress_cb, transcode_completed_cb, user_param);
+			else
 				debug_log("BUSY");
-			}
 		}
-		#if _one_by_one
-		g_main_loop_run (loop);
+#if _one_by_one
+		g_main_loop_run(loop);
 	}
-		#else
+#else
 	}
-	g_main_loop_run (loop);
-	#endif
+	g_main_loop_run(loop);
+#endif
 
-	if(ret == MM_ERROR_NONE) {
+	if (ret == MM_ERROR_NONE) {
 		/* cleanup */
-		mm_transcode_destroy (MMHandle);
-		if(ret == MM_ERROR_NONE) {
+		mm_transcode_destroy(MMHandle);
+		if (ret == MM_ERROR_NONE) {
 			debug_log("Success - Transcode attribute");
-		}else{
+		} else {
 			debug_error("ERROR - Transcode attribute");
 			return ret;
 		}
-	} else{
+	} else {
 		debug_error("ERROR - Transcode pipeline");
 		return ret;
 	}
 
 	return ret;
 }
-
