@@ -1,11 +1,11 @@
 Name:       libmm-transcode
 Summary:    Multimedia Framework Video Transcode Library
 Version:    0.10
-Release:    2
+Release:    4
 Group:      System/Libraries
 License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
-Source1001: 	libmm-transcode.manifest
+Source1001: libmm-transcode.manifest
 BuildRequires:  pkgconfig(mm-common)
 BuildRequires:  pkgconfig(mm-log)
 BuildRequires:  pkgconfig(mm-fileinfo)
