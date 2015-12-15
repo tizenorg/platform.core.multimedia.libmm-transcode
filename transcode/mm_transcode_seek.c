@@ -200,9 +200,9 @@ GstAutoplugSelectResult _mm_cb_decode_bin_autoplug_select(GstElement *element, G
 	}
 
 	if (g_strrstr(caps_str, "video")) {
-		if (g_strrstr(feature_name, "omx") || g_strrstr(feature_name, "sprd")) {
+		if (g_strrstr(feature_name, "omx") || g_strrstr(feature_name, "sprd") || g_strrstr(feature_name, "v4l2")) {
 			/* emit autoplug-select to see what we should do with it. */
-			debug_log("SKIP HW Codec");
+			debug_log("SKIP %s Codec", feature_name);
 			return GST_AUTOPLUG_SELECT_SKIP;
 		}
 		handle->property->videodecodename = (char *)malloc(sizeof(char) * ENC_BUFFER_SIZE);
