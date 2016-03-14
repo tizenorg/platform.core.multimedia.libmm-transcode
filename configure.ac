@@ -74,7 +74,6 @@ AC_SUBST(GMODULE_LIBS)
 
 AC_CONFIG_FILES([Makefile
 		 transcode/Makefile
-		 transcode/test/Makefile
                  transcode/mm-transcode.pc
 ])
 AC_OUTPUT

@@ -81,5 +81,4 @@ rm -rf %{buildroot}
 %files tool
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
-%{_bindir}/mm_transcode_testsuite
 

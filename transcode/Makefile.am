@@ -38,4 +38,3 @@ pcfiles = mm-transcode.pc
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = $(pcfiles)
 EXTRA_DIST = $(pcfiles)
-SUBDIRS = . test
