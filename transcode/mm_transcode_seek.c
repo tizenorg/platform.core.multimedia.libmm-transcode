@@ -1210,14 +1210,16 @@ int _mm_transcode_thread(handle_s *handle)
 	}
 
 	if (!handle->property->thread_mutex) {
-		handle->property->thread_mutex = g_mutex_new();
+		handle->property->thread_mutex = g_new(GMutex, 1);
+		g_mutex_init(handle->property->thread_mutex);
 		debug_log("create thread_mutex: 0x%2x", handle->property->thread_mutex);
 	} else {
 		debug_error("ERROR - thread_mutex is already created");
 	}
 
 	if (!handle->property->thread_exit_mutex) {
-		handle->property->thread_exit_mutex = g_mutex_new();
+		handle->property->thread_exit_mutex = g_new(GMutex, 1);
+		g_mutex_init(handle->property->thread_exit_mutex);
 		debug_log("create exit mutex: 0x%2x", handle->property->thread_exit_mutex);
 	} else {
 		debug_error("ERROR - thread_exit_mutex is already created");
@@ -1232,7 +1234,8 @@ int _mm_transcode_thread(handle_s *handle)
 	}
 
 	if (!handle->property->thread_cond) {
-		handle->property->thread_cond = g_cond_new();
+		handle->property->thread_cond = g_new(GCond, 1);
+		g_cond_init(handle->property->thread_cond);
 		debug_log("create thread cond: 0x%2x", handle->property->thread_cond);
 	} else {
 		debug_error("thread cond is already created");
@@ -1240,7 +1243,7 @@ int _mm_transcode_thread(handle_s *handle)
 
 	/* create threads */
 	debug_log("create thread");
-	handle->property->thread = g_thread_create((GThreadFunc)_mm_transcode_thread_repeate, (gpointer)handle, TRUE, NULL);
+	handle->property->thread = g_thread_new(NULL, (GThreadFunc)_mm_transcode_thread_repeate, (gpointer)handle);
 	if (!handle->property->thread) {
 		debug_error("ERROR - create thread");
 		return MM_ERROR_TRANSCODE_INTERNAL;

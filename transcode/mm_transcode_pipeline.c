@@ -123,19 +123,22 @@ int _mm_cleanup_pipeline(handle_s *handle)
 	}
 
 	if (handle->property->thread_mutex) {
-		g_mutex_free(handle->property->thread_mutex);
+		g_mutex_clear(handle->property->thread_mutex);
+		g_free(handle->property->thread_mutex);
 		handle->property->thread_mutex = NULL;
 		debug_log("Success - free (thread_mutex)");
 	}
 
 	if (handle->property->thread_cond) {
-		g_cond_free(handle->property->thread_cond);
+		g_cond_clear(handle->property->thread_cond);
+		g_free(handle->property->thread_cond);
 		handle->property->thread_cond = NULL;
 		debug_log("Success - free (thread_cond)");
 	}
 
 	if (handle->property->thread_exit_mutex) {
-		g_mutex_free(handle->property->thread_exit_mutex);
+		g_mutex_clear(handle->property->thread_exit_mutex);
+		g_free(handle->property->thread_exit_mutex);
 		handle->property->thread_exit_mutex = NULL;
 		debug_log("Success - free (thread_exit_mutex)");
 	}
